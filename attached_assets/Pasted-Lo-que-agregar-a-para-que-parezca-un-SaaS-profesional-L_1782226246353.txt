@@ -1,0 +1,295 @@
+Lo que agregaría para que parezca un SaaS profesional
+Landing mucho más fuerte
+
+Agregar secciones:
+
+✅ Capturas reales del sistema
+
+✅ Cómo funciona en 3 pasos
+
+✅ Testimonios
+
+✅ FAQ
+
+✅ Profesiones compatibles
+
+✅ Comparativa con agenda manual
+
+✅ CTA flotante
+
+Página pública de reservas
+
+Por ejemplo:
+
+turnohub.com/andrea-tenis
+
+Que muestre:
+
+Foto profesional
+Servicios
+Duración
+Precio
+Horarios disponibles
+Botón reservar
+
+Tipo Calendly.
+
+Dashboard profesional
+
+Menú lateral:
+
+📅 Agenda
+
+👥 Clientes
+
+💳 Pagos
+
+📈 Estadísticas
+
+⚙️ Configuración
+
+💬 WhatsApp
+
+Calendario real
+
+Muy importante.
+
+Vista:
+
+Día
+Semana
+Mes
+
+Con colores.
+
+Si no tiene calendario visual parece incompleto.
+
+WhatsApp automático
+
+Cuando reservan:
+
+Cliente recibe:
+
+Tu turno fue confirmado para el martes 18:00 hs.
+
+Cuando cancelan:
+
+Tu turno fue cancelado.
+
+24 horas antes:
+
+Recordatorio de turno.
+
+Esto vende muchísimo.
+
+Mercado Pago
+
+Que el profesional pueda decidir:
+
+Cobrar online.
+Cobrar seña.
+Cobrar presencial.
+Estadísticas
+
+Mostrar:
+
+Turnos del mes.
+Facturación.
+Clientes nuevos.
+Inasistencias.
+Servicios más vendidos.
+Plan Premium
+
+Agregar:
+
+Varios profesionales.
+Varias sedes.
+Varios calendarios.
+
+Por ejemplo:
+
+Academia de tenis.
+
+Centro de nutrición.
+
+Peluquería con varios empleados.
+
+Lo que más valor genera
+
+Si yo fuera vos priorizaría:
+
+Calendario visual.
+Reserva online.
+WhatsApp automático.
+Mercado Pago.
+Dashboard.
+
+Con eso ya podrías salir a ofrecerlo.
+
+Si querés competir con Calendly o TurnosApp
+
+Agregaría después:
+
+IA asistente
+
+Ejemplo:
+
+"Quiero un turno esta semana después de las 18 hs"
+
+La IA busca horarios y propone opciones.
+
+Dominio personalizado
+agenda.andreamarzetti.com
+
+o
+
+turnos.clubdetenis.com
+App tipo PWA
+
+Que se instale en el celular.
+
+No hace falta app nativa.
+
+Mi valoración hoy
+
+Landing actual:
+20/100
+
+Landing + reservas:
+50/100
+
+Landing + reservas + calendario + WhatsApp:
+75/100
+
+Landing + reservas + calendario + WhatsApp + Mercado Pago + dashboard:
+90/100
+
+Y siendo profesora de tenis, yo intentaría conseguir los primeros clientes justamente ahí:
+
+Profes de tenis.
+Academias.
+Entrenadores personales.
+Nutricionistas.
+
+Porque ya conocés ese mundo y te va a costar menos vender que un SaaS genérico para cualquier negocio.
+
+aparte quiero otros colores para que no sea iguala vektra hub
+
+Sí, de hecho te conviene muchísimo que TurnoHub tenga una identidad visual totalmente distinta a Vektra Hub.
+
+Si los dos SaaS tienen los mismos colores, la misma estructura y el mismo estilo, da sensación de que es "el mismo sistema con otro nombre".
+
+Para Vektra Hub
+
+Yo mantendría algo más tecnológico:
+
+Azul eléctrico
+Violeta
+Negro / gris oscuro
+Estilo moderno tipo Shopify
+
+Ejemplo:
+
+#2563EB
+#7C3AED
+#111827
+Para TurnoHub
+
+Como es agenda, reservas, profesionales y servicios, usaría algo más limpio y confiable.
+
+Opción 1 (mi favorita)
+
+🟢 Verde + azul petróleo
+
+Principal: #14B8A6
+Secundario: #0F766E
+Fondo: #FFFFFF
+Gris: #64748B
+
+Da sensación de:
+
+Organización
+Profesionalismo
+Salud
+Confianza
+
+Ideal para:
+
+Nutricionistas
+Psicólogos
+Profes de tenis
+Entrenadores
+Opción 2
+
+🟠 Naranja moderno
+
+Principal: #F97316
+Secundario: #EA580C
+Fondo: #FFFFFF
+
+Más energético.
+
+Ideal para:
+
+Deportes
+Fitness
+Entrenadores
+Opción 3
+
+🔵 Azul claro estilo Calendly
+
+Principal: #06B6D4
+Secundario: #0891B2
+Fondo: #FFFFFF
+
+Muy SaaS profesional.
+
+También cambiaría el logo
+
+Vektra Hub
+
+Hexágonos
+Tecnología
+Ecommerce
+
+TurnoHub
+
+Calendario
+Reloj
+Check
+Agenda
+
+Algo mucho más relacionado con turnos.
+
+Y cambiaría completamente la landing
+
+Hero principal:
+
+Gestioná tus turnos en minutos.
+Menos mensajes. Más clientes. Más tiempo para vos.
+
+Botón:
+
+✅ Probar gratis 14 días
+
+Y abajo una captura enorme del calendario.
+
+Si fuera mío
+
+Haría:
+
+Vektra Hub
+
+Azul + violeta.
+Ecommerce.
+Tecnología.
+
+TurnoHub
+
+Verde agua + blanco.
+Calendario.
+Servicios.
+Salud.
+Profesionales.
+
+Así parecen dos empresas distintas y más profesionales cuando los muestres a clientes.

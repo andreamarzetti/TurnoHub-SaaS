@@ -80,8 +80,14 @@ router.post("/register", async (req, res) => {
   req.session.userId = user.id;
   req.session.role = user.role;
 
-  const { passwordHash: _, ...userOut } = user;
-  res.status(201).json({ user: userOut });
+  req.session.save((err) => {
+    if (err) {
+      res.status(500).json({ error: "Session error" });
+      return;
+    }
+    const { passwordHash: _, ...userOut } = user;
+    res.status(201).json({ user: userOut });
+  });
 });
 
 router.post("/login", async (req, res) => {
@@ -108,8 +114,14 @@ router.post("/login", async (req, res) => {
   req.session.userId = user.id;
   req.session.role = user.role;
 
-  const { passwordHash: _, ...userOut } = user;
-  res.status(200).json({ user: userOut });
+  req.session.save((err) => {
+    if (err) {
+      res.status(500).json({ error: "Session error" });
+      return;
+    }
+    const { passwordHash: _, ...userOut } = user;
+    res.status(200).json({ user: userOut });
+  });
 });
 
 router.post("/logout", (req, res) => {

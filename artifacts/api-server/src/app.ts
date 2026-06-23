@@ -48,7 +48,7 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "user_sessions",
-      createTableIfMissing: true,
+      createTableIfMissing: false,
     }),
     secret: process.env.SESSION_SECRET ?? "turnohub-dev-secret",
     resave: false,
