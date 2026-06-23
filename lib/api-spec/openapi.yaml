@@ -3,20 +3,40 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TurnoHub API - Sistema de reservas y turnos online
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: professionals
+    description: Professional profiles
+  - name: services
+    description: Professional services
+  - name: availability
+    description: Working schedules and availability
+  - name: appointments
+    description: Bookings and appointments
+  - name: clients
+    description: Client management
+  - name: subscriptions
+    description: Plans and subscriptions
+  - name: dashboard
+    description: Dashboard summary data
+  - name: admin
+    description: Super admin operations
+  - name: booking
+    description: Public booking flow
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +44,681 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new professional account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already exists
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: OK
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  # PROFESSIONALS
+  /professionals/me:
+    get:
+      operationId: getMyProfessionalProfile
+      tags: [professionals]
+      summary: Get own professional profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+
+    patch:
+      operationId: updateMyProfessionalProfile
+      tags: [professionals]
+      summary: Update own professional profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+
+  /professionals/{professionalId}:
+    get:
+      operationId: getProfessional
+      tags: [professionals]
+      parameters:
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+
+  # SERVICES
+  /services:
+    get:
+      operationId: getMyServices
+      tags: [services]
+      summary: Get professional's own services
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a new service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{serviceId}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+    delete:
+      operationId: deleteService
+      tags: [services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # AVAILABILITY
+  /availability:
+    get:
+      operationId: getMyAvailability
+      tags: [availability]
+      summary: Get professional's schedule
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilitySlot"
+
+    post:
+      operationId: createAvailabilitySlot
+      tags: [availability]
+      summary: Add a working schedule slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilitySlotInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilitySlot"
+
+  /availability/{slotId}:
+    patch:
+      operationId: updateAvailabilitySlot
+      tags: [availability]
+      parameters:
+        - name: slotId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilitySlotUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilitySlot"
+
+    delete:
+      operationId: deleteAvailabilitySlot
+      tags: [availability]
+      parameters:
+        - name: slotId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # APPOINTMENTS
+  /appointments:
+    get:
+      operationId: getMyAppointments
+      tags: [appointments]
+      summary: Get professional's appointments
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: startDate
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: endDate
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+
+  /appointments/{appointmentId}:
+    get:
+      operationId: getAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+    patch:
+      operationId: updateAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+    delete:
+      operationId: cancelAppointment
+      tags: [appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Cancelled
+
+  # CLIENTS
+  /clients:
+    get:
+      operationId: getMyClients
+      tags: [clients]
+      summary: Get professional's client list
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+
+  /clients/{clientId}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientDetail"
+
+  # SUBSCRIPTIONS
+  /subscriptions/plans:
+    get:
+      operationId: getPlans
+      tags: [subscriptions]
+      summary: Get available subscription plans
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plan"
+
+  /subscriptions/me:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get current subscription
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+    post:
+      operationId: createSubscription
+      tags: [subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/me/cancel:
+    post:
+      operationId: cancelSubscription
+      tags: [subscriptions]
+      summary: Cancel current subscription
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  # DASHBOARD
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/upcoming:
+    get:
+      operationId: getUpcomingAppointments
+      tags: [dashboard]
+      summary: Get next upcoming appointments
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+
+  /dashboard/recent-clients:
+    get:
+      operationId: getRecentClients
+      tags: [dashboard]
+      summary: Get recently active clients
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+
+  /dashboard/appointments-by-day:
+    get:
+      operationId: getAppointmentsByDay
+      tags: [dashboard]
+      summary: Appointments grouped by day for the current week
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentDayStat"
+
+  # ADMIN
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Global platform stats (super admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/professionals:
+    get:
+      operationId: getAdminProfessionals
+      tags: [admin]
+      summary: List all professionals (super admin only)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfessionalAdmin"
+
+  /admin/professionals/{professionalId}/status:
+    patch:
+      operationId: updateProfessionalStatus
+      tags: [admin]
+      parameters:
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalStatusUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalAdmin"
+
+  /admin/professionals/{professionalId}/plan:
+    patch:
+      operationId: updateProfessionalPlan
+      tags: [admin]
+      parameters:
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalPlanUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalAdmin"
+
+  # PUBLIC BOOKING
+  /booking/{slug}:
+    get:
+      operationId: getPublicProfile
+      tags: [booking]
+      summary: Get public professional profile for booking
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfile"
+        "404":
+          description: Not found
+
+  /booking/{slug}/slots:
+    get:
+      operationId: getAvailableSlots
+      tags: [booking]
+      summary: Get available time slots for a date
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: serviceId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlot"
+
+  /booking/{slug}/book:
+    post:
+      operationId: createBooking
+      tags: [booking]
+      summary: Create a public booking
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "409":
+          description: Slot no longer available
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +729,517 @@ components:
       required:
         - status
 
+    # AUTH
+    RegisterInput:
+      type: object
+      required: [name, email, password, profession]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        profession:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [super_admin, professional, client]
+        createdAt:
+          type: string
+
+    # PROFESSIONAL
+    Professional:
+      type: object
+      required: [id, userId, name, email, profession, slug, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        profession:
+          type: string
+        slug:
+          type: string
+        bio:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        websiteUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, suspended, trial]
+        currentPlan:
+          type: ["string", "null"]
+        trialEndsAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ProfessionalUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        bio:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        avatarUrl:
+          type: string
+        whatsappNumber:
+          type: string
+        instagramUrl:
+          type: string
+        facebookUrl:
+          type: string
+        websiteUrl:
+          type: string
+
+    ProfessionalAdmin:
+      type: object
+      required: [id, name, email, profession, status, currentPlan, createdAt, totalAppointments, totalClients]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        profession:
+          type: string
+        status:
+          type: string
+        currentPlan:
+          type: ["string", "null"]
+        trialEndsAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        totalAppointments:
+          type: integer
+        totalClients:
+          type: integer
+
+    ProfessionalStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, suspended]
+
+    ProfessionalPlanUpdate:
+      type: object
+      required: [plan]
+      properties:
+        plan:
+          type: string
+          enum: [basico, profesional, premium]
+
+    # SERVICES
+    Service:
+      type: object
+      required: [id, professionalId, name, duration, price, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        duration:
+          type: integer
+        price:
+          type: number
+        currency:
+          type: string
+        color:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    ServiceInput:
+      type: object
+      required: [name, duration, price]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        price:
+          type: number
+        currency:
+          type: string
+        color:
+          type: string
+
+    ServiceUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        price:
+          type: number
+        currency:
+          type: string
+        color:
+          type: string
+        isActive:
+          type: boolean
+
+    # AVAILABILITY
+    AvailabilitySlot:
+      type: object
+      required: [id, professionalId, dayOfWeek, startTime, endTime, isActive]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        dayOfWeek:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        isActive:
+          type: boolean
+
+    AvailabilitySlotInput:
+      type: object
+      required: [dayOfWeek, startTime, endTime]
+      properties:
+        dayOfWeek:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+
+    AvailabilitySlotUpdate:
+      type: object
+      properties:
+        dayOfWeek:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        isActive:
+          type: boolean
+
+    # APPOINTMENTS
+    Appointment:
+      type: object
+      required: [id, professionalId, serviceId, clientName, clientEmail, date, startTime, endTime, status, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        serviceId:
+          type: integer
+        serviceName:
+          type: string
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed, rescheduled]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    AppointmentUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed, rescheduled]
+        notes:
+          type: string
+
+    # CLIENTS
+    Client:
+      type: object
+      required: [id, professionalId, name, email, totalAppointments, lastAppointmentAt, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        totalAppointments:
+          type: integer
+        lastAppointmentAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ClientDetail:
+      type: object
+      required: [id, professionalId, name, email, totalAppointments, appointments, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        totalAppointments:
+          type: integer
+        lastAppointmentAt:
+          type: ["string", "null"]
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
+        createdAt:
+          type: string
+
+    # SUBSCRIPTIONS
+    Plan:
+      type: object
+      required: [id, name, slug, priceMonthly, features]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        priceMonthly:
+          type: number
+        features:
+          type: array
+          items:
+            type: string
+        maxServices:
+          type: ["integer", "null"]
+        maxAppointmentsPerMonth:
+          type: ["integer", "null"]
+
+    Subscription:
+      type: object
+      required: [id, professionalId, planSlug, status, currentPeriodStart, currentPeriodEnd, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        planSlug:
+          type: string
+        status:
+          type: string
+          enum: [trial, active, past_due, cancelled, suspended]
+        currentPeriodStart:
+          type: string
+        currentPeriodEnd:
+          type: string
+        cancelAtPeriodEnd:
+          type: boolean
+        createdAt:
+          type: string
+
+    SubscriptionInput:
+      type: object
+      required: [planSlug]
+      properties:
+        planSlug:
+          type: string
+
+    # DASHBOARD
+    DashboardSummary:
+      type: object
+      required: [totalAppointmentsToday, totalAppointmentsThisWeek, totalClients, pendingAppointments, completedThisMonth, cancellationRate]
+      properties:
+        totalAppointmentsToday:
+          type: integer
+        totalAppointmentsThisWeek:
+          type: integer
+        totalClients:
+          type: integer
+        pendingAppointments:
+          type: integer
+        completedThisMonth:
+          type: integer
+        cancellationRate:
+          type: number
+
+    AppointmentDayStat:
+      type: object
+      required: [date, dayLabel, count]
+      properties:
+        date:
+          type: string
+        dayLabel:
+          type: string
+        count:
+          type: integer
+
+    # ADMIN
+    AdminStats:
+      type: object
+      required: [totalProfessionals, activeProfessionals, totalAppointmentsToday, totalRevenueThisMonth, newProfessionalsThisMonth, trialProfessionals, suspendedProfessionals]
+      properties:
+        totalProfessionals:
+          type: integer
+        activeProfessionals:
+          type: integer
+        totalAppointmentsToday:
+          type: integer
+        totalRevenueThisMonth:
+          type: number
+        newProfessionalsThisMonth:
+          type: integer
+        trialProfessionals:
+          type: integer
+        suspendedProfessionals:
+          type: integer
+
+    # PUBLIC BOOKING
+    PublicProfile:
+      type: object
+      required: [id, name, profession, slug, services]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        profession:
+          type: string
+        slug:
+          type: string
+        bio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+
+    TimeSlot:
+      type: object
+      required: [startTime, endTime, available]
+      properties:
+        startTime:
+          type: string
+        endTime:
+          type: string
+        available:
+          type: boolean
+
+    BookingInput:
+      type: object
+      required: [serviceId, date, startTime, clientName, clientEmail]
+      properties:
+        serviceId:
+          type: integer
+        date:
+          type: string
+        startTime:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        notes:
+          type: string
