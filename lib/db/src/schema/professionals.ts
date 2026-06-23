@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -22,6 +22,7 @@ export const professionalsTable = pgTable("professionals", {
   facebookUrl: text("facebook_url"),
   websiteUrl: text("website_url"),
   status: professionalStatusEnum("status").notNull().default("trial"),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   currentPlan: text("current_plan"),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
