@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Phone, Clock, CheckCircle2, ChevronLeft, ChevronRight, Instagram, Globe, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Clock, CheckCircle2, ChevronLeft, ChevronRight, Instagram, Globe, MessageCircle, Calendar } from "lucide-react";
 import { format, addDays, startOfToday, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ export default function PublicBooking() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [calendarOffset, setCalendarOffset] = useState(0);
+  const [waUrl, setWaUrl] = useState<string | null>(null);
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -30,7 +31,7 @@ export default function PublicBooking() {
     { query: { enabled: !!slug && !!selectedService && step === "datetime" } }
   );
 
-  const createBooking = useCreateBooking(slug as string);
+  const createBooking = useCreateBooking();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", notes: "" });
@@ -66,8 +67,8 @@ export default function PublicBooking() {
 
   const handleBook = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedService || !selectedTime) return;
-    createBooking.mutate({ data: {
+    if (!selectedService || !selectedTime || !slug) return;
+    createBooking.mutate({ slug, data: {
       serviceId: selectedService,
       date: dateStr,
       startTime: selectedTime,
@@ -76,8 +77,15 @@ export default function PublicBooking() {
       clientPhone: formData.phone,
       notes: formData.notes,
     }}, {
-      onSuccess: () => setStep("success"),
-      onError: () => toast({ title: "Error al reservar", description: "Intentá de nuevo.", variant: "destructive" }),
+      onSuccess: (data) => {
+        const d = data as unknown as { waUrl?: string };
+        if (d?.waUrl) setWaUrl(d.waUrl);
+        setStep("success");
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        toast({ title: "Error al reservar", description: msg || "Ese horario ya no está disponible. Elegí otro.", variant: "destructive" });
+      },
     });
   };
 
@@ -100,29 +108,53 @@ export default function PublicBooking() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {step === "success" ? (
-          <div className="max-w-md mx-auto text-center bg-white rounded-3xl shadow-sm border p-10">
-            <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
+          <div className="max-w-md mx-auto text-center bg-white rounded-3xl shadow-sm border p-8 md:p-10">
+            <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="h-10 w-10 text-emerald-500" />
             </div>
             <h2 className="text-2xl font-bold mb-2">¡Turno confirmado!</h2>
-            <p className="text-muted-foreground mb-4">
-              Tu turno con <strong>{profile.name}</strong> fue reservado correctamente.
+            <p className="text-muted-foreground mb-5">
+              Te esperamos, <strong>{formData.name}</strong>. Revisá tu email para ver los detalles.
             </p>
+
             {selectedServiceData && (
-              <div className="bg-muted/50 rounded-2xl p-4 text-sm mb-6 text-left space-y-1">
-                <p><span className="text-muted-foreground">Servicio:</span> <strong>{selectedServiceData.name}</strong></p>
-                <p><span className="text-muted-foreground">Fecha:</span> <strong>{format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}</strong></p>
-                <p><span className="text-muted-foreground">Hora:</span> <strong>{selectedTime?.substring(0, 5)}</strong></p>
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm mb-5 text-left space-y-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <p className="font-bold text-foreground">{selectedServiceData.name}</p>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  <span>{format(selectedDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <span>{selectedTime?.substring(0, 5)} hs · {selectedServiceData.duration} min</span>
+                </div>
+                <div className="flex items-center gap-2 font-bold text-foreground pt-1 border-t border-slate-100">
+                  <span>Total:</span>
+                  <span className="text-primary">${Number(selectedServiceData.price).toLocaleString("es-AR")} ARS</span>
+                </div>
               </div>
             )}
-            <Button className="w-full rounded-xl" onClick={() => {
-              setStep("service");
-              setSelectedService(null);
-              setSelectedTime(null);
-              setFormData({ name: "", email: "", phone: "", notes: "" });
-            }}>
-              Reservar otro turno
-            </Button>
+
+            <div className="space-y-3">
+              {waUrl && (
+                <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#22c55e] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm">
+                  <MessageCircle className="h-4 w-4" />
+                  Confirmar por WhatsApp con {profile.name}
+                </a>
+              )}
+              <Button variant="outline" className="w-full rounded-xl" onClick={() => {
+                setStep("service");
+                setSelectedService(null);
+                setSelectedTime(null);
+                setWaUrl(null);
+                setFormData({ name: "", email: "", phone: "", notes: "" });
+              }}>
+                Reservar otro turno
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-6">
