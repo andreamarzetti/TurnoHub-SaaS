@@ -26,6 +26,7 @@ import Settings from "@/pages/dashboard/Settings";
 import Subscription from "@/pages/dashboard/Subscription";
 import Calendar from "@/pages/dashboard/Calendar";
 import Suspended from "@/pages/dashboard/Suspended";
+import PaymentSuccess from "@/pages/dashboard/PaymentSuccess";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminProfessionals from "@/pages/admin/AdminProfessionals";
@@ -61,6 +62,11 @@ function Router() {
       {/* Suspended / trial expired (standalone) */}
       <Route path="/suscripcion-vencida">
         {() => <Suspended />}
+      </Route>
+
+      {/* Payment success (standalone) */}
+      <Route path="/suscripcion/exito">
+        {() => <PaymentSuccess />}
       </Route>
 
       {/* Professional Routes (protected: professional + onboarded + not suspended) */}

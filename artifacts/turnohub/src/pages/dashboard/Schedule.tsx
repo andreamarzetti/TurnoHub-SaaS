@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import type { AvailabilitySlot } from "@workspace/api-client-react";
 
 const DAYS = [
   "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
@@ -124,13 +125,13 @@ export default function Schedule() {
   );
 }
 
-function SlotRow({ slot }: { slot: any }) {
-  const deleteMutation = useDeleteAvailabilitySlot(slot.id);
+function SlotRow({ slot }: { slot: AvailabilitySlot }) {
+  const deleteMutation = useDeleteAvailabilitySlot();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const handleDelete = () => {
-    deleteMutation.mutate(undefined, {
+    deleteMutation.mutate({ slotId: slot.id }, {
       onSuccess: () => {
         toast({ title: "Horario eliminado" });
         queryClient.invalidateQueries({ queryKey: getGetMyAvailabilityQueryKey() });

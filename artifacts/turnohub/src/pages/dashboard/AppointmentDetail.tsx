@@ -26,10 +26,13 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AppointmentDetail() {
   const { id } = useParams<{ id: string }>();
   const appointmentId = Number(id);
-  const { data: apt, isLoading } = useGetAppointment(appointmentId, { query: { enabled: !!appointmentId } });
+  const queryKey = getGetAppointmentQueryKey(appointmentId);
+  const { data: apt, isLoading } = useGetAppointment(appointmentId, {
+    query: { enabled: !!appointmentId, queryKey },
+  });
 
-  const updateMutation = useUpdateAppointment(appointmentId);
-  const cancelMutation = useCancelAppointment(appointmentId);
+  const updateMutation = useUpdateAppointment();
+  const cancelMutation = useCancelAppointment();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -46,7 +49,7 @@ export default function AppointmentDetail() {
 
   const handleStatusUpdate = (status: "confirmed" | "completed") => {
     const label = status === "confirmed" ? "confirmado" : "completado";
-    updateMutation.mutate({ data: { status } }, {
+    updateMutation.mutate({ appointmentId, data: { status } }, {
       onSuccess: () => {
         toast({ title: `✅ Turno marcado como ${label}` });
         queryClient.invalidateQueries({ queryKey: getGetAppointmentQueryKey(appointmentId) });
@@ -56,7 +59,7 @@ export default function AppointmentDetail() {
 
   const handleCancel = () => {
     if (confirm("¿Seguro que querés cancelar este turno?")) {
-      cancelMutation.mutate(undefined, {
+      cancelMutation.mutate({ appointmentId }, {
         onSuccess: () => {
           toast({ title: "Turno cancelado" });
           queryClient.invalidateQueries({ queryKey: getGetAppointmentQueryKey(appointmentId) });

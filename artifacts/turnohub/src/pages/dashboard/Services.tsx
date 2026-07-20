@@ -17,13 +17,12 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, MoreVertical, Trash, Clock, DollarSign, Scissors, Dumbbell, BookOpen, Heart, Smile, Leaf, Star } from "lucide-react";
+import type { Service } from "@workspace/api-client-react";
 
 const SERVICE_COLORS = [
   "#14B8A6", "#6366F1", "#F59E0B", "#EF4444",
   "#8B5CF6", "#EC4899", "#10B981", "#3B82F6",
 ];
-
-const SERVICE_ICONS = [Scissors, Dumbbell, BookOpen, Heart, Smile, Leaf, Star];
 
 function getIconForService(name: string) {
   const lower = name.toLowerCase();
@@ -162,15 +161,15 @@ export default function Services() {
   );
 }
 
-function ServiceCard({ service }: { service: any }) {
+function ServiceCard({ service }: { service: Service }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const deleteMutation = useDeleteService(service.id);
-  const updateMutation = useUpdateService(service.id);
+  const deleteMutation = useDeleteService();
+  const updateMutation = useUpdateService();
   const Icon = getIconForService(service.name);
 
   const toggleActive = (checked: boolean) => {
-    updateMutation.mutate({ data: { isActive: checked } }, {
+    updateMutation.mutate({ serviceId: service.id, data: { isActive: checked } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetMyServicesQueryKey() });
         toast({ title: checked ? "Servicio activado" : "Servicio desactivado" });
@@ -180,7 +179,7 @@ function ServiceCard({ service }: { service: any }) {
 
   const handleDelete = () => {
     if (confirm("¿Eliminás este servicio? Los turnos existentes no se verán afectados.")) {
-      deleteMutation.mutate(undefined, {
+      deleteMutation.mutate({ serviceId: service.id }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetMyServicesQueryKey() });
           toast({ title: "Servicio eliminado" });

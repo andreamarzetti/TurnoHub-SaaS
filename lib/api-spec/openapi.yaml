@@ -489,6 +489,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/Subscription"
 
+  /subscriptions/mp/checkout:
+    post:
+      operationId: createMpCheckout
+      tags: [subscriptions]
+      summary: Create a Mercado Pago subscription checkout URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpCheckoutInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MpCheckoutResponse"
+
+  /subscriptions/mp/webhook:
+    post:
+      operationId: mpWebhook
+      tags: [subscriptions]
+      summary: Mercado Pago payment webhook (public)
+      responses:
+        "200":
+          description: OK
+
   # DASHBOARD
   /dashboard/summary:
     get:
@@ -1135,6 +1163,22 @@ components:
         planSlug:
           type: string
 
+    MpCheckoutInput:
+      type: object
+      required: [planSlug]
+      properties:
+        planSlug:
+          type: string
+
+    MpCheckoutResponse:
+      type: object
+      required: [checkoutUrl]
+      properties:
+        checkoutUrl:
+          type: string
+        sandboxCheckoutUrl:
+          type: ["string", "null"]
+
     # DASHBOARD
     DashboardSummary:
       type: object
@@ -1205,9 +1249,15 @@ components:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
         whatsappNumber:
           type: ["string", "null"]
         instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        websiteUrl:
           type: ["string", "null"]
         services:
           type: array

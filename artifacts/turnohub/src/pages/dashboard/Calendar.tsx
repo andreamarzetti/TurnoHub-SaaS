@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGetMyAppointments } from "@workspace/api-client-react";
+import { useGetMyAppointments, getGetMyAppointmentsQueryKey } from "@workspace/api-client-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +28,9 @@ export default function CalendarPage() {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-  const { data: appointments, isLoading } = useGetMyAppointments({
-    query: { startDate: format(weekStart, "yyyy-MM-dd"), endDate: format(weekEnd, "yyyy-MM-dd") },
+  const params = { startDate: format(weekStart, "yyyy-MM-dd"), endDate: format(weekEnd, "yyyy-MM-dd") };
+  const { data: appointments, isLoading } = useGetMyAppointments(params, {
+    query: { queryKey: getGetMyAppointmentsQueryKey(params) },
   });
 
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });

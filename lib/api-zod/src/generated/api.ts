@@ -452,6 +452,19 @@ export const CancelSubscriptionResponse = zod.object({
 
 
 /**
+ * @summary Create a Mercado Pago subscription checkout URL
+ */
+export const CreateMpCheckoutBody = zod.object({
+  "planSlug": zod.string()
+})
+
+export const CreateMpCheckoutResponse = zod.object({
+  "checkoutUrl": zod.string(),
+  "sandboxCheckoutUrl": zod.string().nullish()
+})
+
+
+/**
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({
@@ -614,8 +627,11 @@ export const GetPublicProfileResponse = zod.object({
   "avatarUrl": zod.string().nullish(),
   "city": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "address": zod.string().nullish(),
   "whatsappNumber": zod.string().nullish(),
   "instagramUrl": zod.string().nullish(),
+  "facebookUrl": zod.string().nullish(),
+  "websiteUrl": zod.string().nullish(),
   "services": zod.array(zod.object({
   "id": zod.number(),
   "professionalId": zod.number(),

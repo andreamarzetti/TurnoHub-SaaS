@@ -44,7 +44,17 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     if (!user) { setLocation("/login"); return; }
     if (user.role === "super_admin") { setLocation("/admin"); return; }
     if (user.role !== "professional") { setLocation("/"); return; }
-    if (user.professional?.status === "suspended") { setLocation("/suscripcion"); return; }
+
+    // Check trial expiry
+    const trialExpired = user.professional?.status === "trial" &&
+      user.professional?.trialEndsAt &&
+      new Date(user.professional.trialEndsAt) < new Date();
+
+    if (user.professional?.status === "suspended" || trialExpired) {
+      setLocation("/suscripcion-vencida");
+      return;
+    }
+
     if (!user.professional?.onboardingCompleted) { setLocation("/onboarding"); return; }
   }, [user, isLoading, setLocation]);
 
@@ -63,7 +73,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     return null;
   }
 
-  if (user.professional.status === "suspended") {
+  const trialExpired = user.professional.status === "trial" &&
+    user.professional.trialEndsAt &&
+    new Date(user.professional.trialEndsAt) < new Date();
+
+  if (user.professional.status === "suspended" || trialExpired) {
     return null;
   }
 

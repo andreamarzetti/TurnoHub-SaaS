@@ -1,4 +1,4 @@
-import { useGetAdminStats, useGetAdminProfessionals } from "@workspace/api-client-react";
+import { useGetAdminStats, useGetAdminProfessionals, getGetAdminProfessionalsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Activity, Calendar, BadgeDollarSign } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -14,7 +14,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: loadingStats } = useGetAdminStats();
-  const { data: professionals, isLoading: loadingProfs } = useGetAdminProfessionals({ query: { status: "active" } });
+  const params = { status: "active" };
+  const { data: professionals, isLoading: loadingProfs } = useGetAdminProfessionals(params, {
+    query: { queryKey: getGetAdminProfessionalsQueryKey(params) },
+  });
 
   if (loadingStats || loadingProfs) {
     return (
@@ -102,7 +105,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <Badge variant="outline" className="mb-1 capitalize">{prof.currentPlan || "Gratis"}</Badge>
+                  <Badge variant="outline" className="mb-1 capitalize">{STATUS_LABELS[prof.status] || prof.currentPlan || "Prueba"}</Badge>
                   <p className="text-xs text-muted-foreground">Desde {format(parseISO(prof.createdAt), "d MMM yyyy", { locale: es })}</p>
                 </div>
               </div>

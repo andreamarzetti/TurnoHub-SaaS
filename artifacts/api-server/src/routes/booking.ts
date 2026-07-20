@@ -66,8 +66,11 @@ router.get("/:slug", async (req, res) => {
     avatarUrl: prof.avatarUrl,
     city: prof.city,
     phone: prof.phone,
+    address: prof.address ?? null,
     whatsappNumber: prof.whatsappNumber,
     instagramUrl: prof.instagramUrl,
+    facebookUrl: prof.facebookUrl ?? null,
+    websiteUrl: prof.websiteUrl ?? null,
     services: services.map(s => ({ ...s, price: Number(s.price) })),
   });
 });

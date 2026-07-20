@@ -308,6 +308,16 @@ export interface SubscriptionInput {
   planSlug: string;
 }
 
+export interface MpCheckoutInput {
+  planSlug: string;
+}
+
+export interface MpCheckoutResponse {
+  checkoutUrl: string;
+  /** @nullable */
+  sandboxCheckoutUrl?: string | null;
+}
+
 export interface DashboardSummary {
   totalAppointmentsToday: number;
   totalAppointmentsThisWeek: number;
@@ -347,9 +357,15 @@ export interface PublicProfile {
   /** @nullable */
   phone?: string | null;
   /** @nullable */
+  address?: string | null;
+  /** @nullable */
   whatsappNumber?: string | null;
   /** @nullable */
   instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  websiteUrl?: string | null;
   services: Service[];
 }
 

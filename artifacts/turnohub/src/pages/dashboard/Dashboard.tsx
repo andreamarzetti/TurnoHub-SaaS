@@ -1,6 +1,6 @@
-import { useGetDashboardSummary, useGetUpcomingAppointments, useGetRecentClients, useGetAppointmentsByDay } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetUpcomingAppointments, useGetAppointmentsByDay, getGetUpcomingAppointmentsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Calendar, Users, Clock, TrendingUp, ArrowRight, CheckCircle2, AlertCircle, Share2 } from "lucide-react";
+import { Calendar, Users, Clock, TrendingUp, ArrowRight, CheckCircle2, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format, parseISO } from "date-fns";
@@ -26,7 +26,12 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
-  const { data: upcoming, isLoading: loadingUpcoming } = useGetUpcomingAppointments({ query: { limit: 5 } });
+
+  const upcomingParams = { limit: 5 };
+  const { data: upcoming, isLoading: loadingUpcoming } = useGetUpcomingAppointments(upcomingParams, {
+    query: { queryKey: getGetUpcomingAppointmentsQueryKey(upcomingParams) },
+  });
+
   const { data: chartData, isLoading: loadingChart } = useGetAppointmentsByDay();
 
   const firstName = user?.name?.split(" ")[0] ?? "Profesional";
@@ -40,7 +45,6 @@ export default function Dashboard() {
       icon: Calendar,
       color: "text-primary",
       bg: "bg-primary/10",
-      trend: null,
     },
     {
       label: "Pendientes",
@@ -48,7 +52,6 @@ export default function Dashboard() {
       icon: Clock,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
-      trend: null,
     },
     {
       label: "Clientes activos",
@@ -56,7 +59,6 @@ export default function Dashboard() {
       icon: Users,
       color: "text-blue-500",
       bg: "bg-blue-500/10",
-      trend: null,
     },
     {
       label: "Tasa de cancelación",
@@ -64,7 +66,6 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: "text-violet-500",
       bg: "bg-violet-500/10",
-      trend: null,
     },
   ];
 
@@ -157,7 +158,7 @@ export default function Dashboard() {
                         backgroundColor: "hsl(var(--card))",
                         fontSize: "12px",
                       }}
-                      formatter={(v: any) => [v, "Turnos"]}
+                      formatter={(v: number) => [v, "Turnos"]}
                     />
                     <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} maxBarSize={36} />
                   </BarChart>

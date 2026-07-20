@@ -1,4 +1,4 @@
-import { useGetMyClients } from "@workspace/api-client-react";
+import { useGetMyClients, getGetMyClientsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -9,7 +9,10 @@ import { useState } from "react";
 
 export default function Clients() {
   const [search, setSearch] = useState("");
-  const { data: clients, isLoading } = useGetMyClients({ query: { search: search || undefined } });
+  const params = { search: search || undefined };
+  const { data: clients, isLoading } = useGetMyClients(params, {
+    query: { queryKey: getGetMyClientsQueryKey(params) },
+  });
 
   return (
     <div className="space-y-6">

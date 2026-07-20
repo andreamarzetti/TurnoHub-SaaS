@@ -1,18 +1,28 @@
-import { useGetPlans, useGetMySubscription, useCreateSubscription, useCancelSubscription, getGetMySubscriptionQueryKey } from "@workspace/api-client-react";
+import { useGetPlans, useGetMySubscription, useCancelSubscription, useCreateMpCheckout, getGetMySubscriptionQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Zap } from "lucide-react";
+import { CheckCircle2, AlertCircle, Zap, CreditCard, Loader2, Clock, ShieldCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { useSearch } from "wouter";
 
 const STATUS_LABELS: Record<string, string> = {
-  trial: "Prueba gratuita",
+  trial: "Período de prueba",
   active: "Activo",
+  past_due: "Pago pendiente",
   cancelled: "Cancelado",
-  expired: "Vencido",
+  suspended: "Suspendido",
+};
+
+const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  trial: "secondary",
+  active: "default",
+  past_due: "destructive",
+  cancelled: "destructive",
+  suspended: "destructive",
 };
 
 const PLAN_HIGHLIGHT: Record<string, boolean> = {
@@ -20,20 +30,32 @@ const PLAN_HIGHLIGHT: Record<string, boolean> = {
 };
 
 export default function Subscription() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const justPaid = params.get("success") === "1";
+
   const { data: plans, isLoading: loadingPlans } = useGetPlans();
   const { data: sub, isLoading: loadingSub } = useGetMySubscription();
-  const createSubMutation = useCreateSubscription();
   const cancelSubMutation = useCancelSubscription();
+  const checkoutMutation = useCreateMpCheckout();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const handleSubscribe = (planSlug: string) => {
-    createSubMutation.mutate({ data: { planSlug } }, {
-      onSuccess: () => {
-        toast({ title: "✅ Plan actualizado correctamente" });
-        queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey() });
+    checkoutMutation.mutate({ data: { planSlug } }, {
+      onSuccess: (data) => {
+        // Redirect to Mercado Pago checkout
+        const url = data.checkoutUrl;
+        if (url) {
+          window.location.href = url;
+        } else {
+          toast({ title: "Error al iniciar el pago", variant: "destructive" });
+        }
       },
-      onError: () => toast({ title: "Error al actualizar el plan", variant: "destructive" })
+      onError: (err: Error) => {
+        const msg = (err as { message?: string })?.message || "Error al iniciar el pago";
+        toast({ title: msg, variant: "destructive" });
+      }
     });
   };
 
@@ -41,7 +63,7 @@ export default function Subscription() {
     if (confirm("¿Seguro que querés cancelar tu suscripción? Perderás acceso al finalizar el período de facturación.")) {
       cancelSubMutation.mutate(undefined, {
         onSuccess: () => {
-          toast({ title: "Suscripción cancelada" });
+          toast({ title: "Suscripción cancelada. Tu acceso continúa hasta fin del período." });
           queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey() });
         }
       });
@@ -56,6 +78,10 @@ export default function Subscription() {
     </div>
   );
 
+  const trialDaysLeft = sub?.status === "trial" && sub.currentPeriodEnd
+    ? Math.max(0, differenceInDays(parseISO(sub.currentPeriodEnd), new Date()))
+    : null;
+
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
@@ -63,12 +89,23 @@ export default function Subscription() {
         <p className="text-muted-foreground text-sm mt-1">Gestioná tu plan y facturación.</p>
       </div>
 
+      {/* Success banner */}
+      {justPaid && (
+        <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4">
+          <ShieldCheck className="h-5 w-5 text-green-600 shrink-0" />
+          <div>
+            <p className="font-semibold text-sm">¡Pago recibido!</p>
+            <p className="text-xs mt-0.5">Tu suscripción está siendo procesada. En unos minutos quedará activa.</p>
+          </div>
+        </div>
+      )}
+
       {sub && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Plan actual</CardTitle>
-              <Badge variant={sub.status === "active" || sub.status === "trial" ? "default" : "secondary"}>
+              <Badge variant={STATUS_VARIANT[sub.status] ?? "secondary"}>
                 {STATUS_LABELS[sub.status] ?? sub.status}
               </Badge>
             </div>
@@ -76,14 +113,34 @@ export default function Subscription() {
           <CardContent className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-2xl font-bold capitalize">{sub.planSlug}</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Período actual hasta el {format(parseISO(sub.currentPeriodEnd), "d 'de' MMMM 'de' yyyy", { locale: es })}
+                <p className="text-2xl font-bold capitalize">
+                  {sub.planSlug === "trial" ? "Prueba gratuita" : sub.planSlug}
                 </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {sub.status === "trial"
+                    ? `Tu período de prueba vence el ${format(parseISO(sub.currentPeriodEnd), "d 'de' MMMM 'de' yyyy", { locale: es })}`
+                    : `Próxima renovación: ${format(parseISO(sub.currentPeriodEnd), "d 'de' MMMM 'de' yyyy", { locale: es })}`
+                  }
+                </p>
+                {trialDaysLeft !== null && (
+                  <div className={`flex items-center gap-2 mt-2 text-sm px-3 py-2 rounded-lg ${trialDaysLeft <= 3 ? "bg-destructive/10 text-destructive" : "bg-amber-50 text-amber-700"}`}>
+                    <Clock className="h-4 w-4 shrink-0" />
+                    {trialDaysLeft === 0
+                      ? "Tu prueba vence hoy — elegí un plan para no perder el acceso"
+                      : `Te quedan ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""} de prueba gratuita`
+                    }
+                  </div>
+                )}
                 {sub.cancelAtPeriodEnd && (
                   <div className="flex items-center gap-2 text-amber-600 mt-2 text-sm bg-amber-50 p-2 rounded-lg">
                     <AlertCircle className="h-4 w-4" />
                     Se cancela al finalizar el período
+                  </div>
+                )}
+                {(sub.status === "past_due" || sub.status === "suspended") && (
+                  <div className="flex items-center gap-2 text-destructive mt-2 text-sm bg-destructive/10 p-3 rounded-lg">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    Tu suscripción está vencida. Elegí un plan para reactivar tu cuenta.
                   </div>
                 )}
               </div>
@@ -100,11 +157,13 @@ export default function Subscription() {
       )}
 
       <div>
-        <h2 className="text-xl font-bold tracking-tight mb-4">Planes disponibles</h2>
+        <h2 className="text-xl font-bold tracking-tight mb-1">Elegí tu plan</h2>
+        <p className="text-sm text-muted-foreground mb-5">El pago se procesa de forma segura a través de Mercado Pago. Podés cancelar cuando quieras.</p>
         <div className="grid md:grid-cols-3 gap-5">
           {plans?.map((plan) => {
-            const isCurrent = sub?.planSlug === plan.slug;
+            const isCurrent = sub?.status === "active" && sub?.planSlug === plan.slug;
             const isHighlight = PLAN_HIGHLIGHT[plan.slug];
+            const isLoading = checkoutMutation.isPending && checkoutMutation.variables?.data?.planSlug === plan.slug;
             return (
               <Card key={plan.id} className={`flex flex-col relative ${isCurrent ? "border-primary ring-1 ring-primary" : ""} ${isHighlight ? "shadow-lg" : ""}`}>
                 {isHighlight && !isCurrent && (
@@ -119,6 +178,9 @@ export default function Subscription() {
                 )}
                 <CardHeader>
                   <CardTitle className="text-lg">{plan.name}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {plan.slug === "basico" ? "Para empezar" : plan.slug === "profesional" ? "El más elegido" : "Sin límites"}
+                  </CardDescription>
                   <div className="flex items-baseline gap-1 mt-2">
                     <span className="text-lg font-bold">$</span>
                     <span className="text-4xl font-extrabold tracking-tight">{Number(plan.priceMonthly).toLocaleString("es-AR")}</span>
@@ -137,16 +199,25 @@ export default function Subscription() {
                   <Button
                     className="w-full"
                     variant={isCurrent ? "outline" : isHighlight ? "default" : "outline"}
-                    disabled={isCurrent || createSubMutation.isPending}
+                    disabled={isCurrent || checkoutMutation.isPending}
                     onClick={() => handleSubscribe(plan.slug)}
                   >
-                    {isCurrent ? "Plan actual" : "Elegir este plan"}
+                    {isLoading ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirigiendo...</>
+                    ) : isCurrent ? (
+                      "Plan actual"
+                    ) : (
+                      <><CreditCard className="h-4 w-4 mr-2" />Suscribirme con MP</>
+                    )}
                   </Button>
                 </CardFooter>
               </Card>
             );
           })}
         </div>
+        <p className="text-xs text-muted-foreground mt-4 text-center">
+          🔒 Pago 100% seguro procesado por Mercado Pago. TurnoHub nunca almacena datos de tarjetas.
+        </p>
       </div>
     </div>
   );

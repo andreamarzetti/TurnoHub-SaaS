@@ -15,6 +15,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
   currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull().defaultNow(),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  mpPreapprovalId: text("mp_preapproval_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

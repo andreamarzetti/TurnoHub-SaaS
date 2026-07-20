@@ -39,6 +39,8 @@ import type {
   GetUpcomingAppointmentsParams,
   HealthStatus,
   LoginInput,
+  MpCheckoutInput,
+  MpCheckoutResponse,
   Plan,
   Professional,
   ProfessionalAdmin,
@@ -1936,6 +1938,147 @@ export const useCancelSubscription = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCancelSubscriptionMutationOptions(options));
+    }
+
+export const getCreateMpCheckoutUrl = () => {
+
+
+
+
+  return `/api/subscriptions/mp/checkout`
+}
+
+/**
+ * @summary Create a Mercado Pago subscription checkout URL
+ */
+export const createMpCheckout = async (mpCheckoutInput: MpCheckoutInput, options?: RequestInit): Promise<MpCheckoutResponse> => {
+
+  return customFetch<MpCheckoutResponse>(getCreateMpCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      mpCheckoutInput,)
+  }
+);}
+
+
+
+
+export const getCreateMpCheckoutMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMpCheckout>>, TError,{data: BodyType<MpCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMpCheckout>>, TError,{data: BodyType<MpCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createMpCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMpCheckout>>, {data: BodyType<MpCheckoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMpCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMpCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createMpCheckout>>>
+    export type CreateMpCheckoutMutationBody = BodyType<MpCheckoutInput>
+    export type CreateMpCheckoutMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a Mercado Pago subscription checkout URL
+ */
+export const useCreateMpCheckout = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMpCheckout>>, TError,{data: BodyType<MpCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMpCheckout>>,
+        TError,
+        {data: BodyType<MpCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMpCheckoutMutationOptions(options));
+    }
+
+export const getMpWebhookUrl = () => {
+
+
+
+
+  return `/api/subscriptions/mp/webhook`
+}
+
+/**
+ * @summary Mercado Pago payment webhook (public)
+ */
+export const mpWebhook = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getMpWebhookUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getMpWebhookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext> => {
+
+const mutationKey = ['mpWebhook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mpWebhook>>, void> = () => {
+
+
+          return  mpWebhook(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MpWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof mpWebhook>>>
+
+    export type MpWebhookMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mercado Pago payment webhook (public)
+ */
+export const useMpWebhook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof mpWebhook>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getMpWebhookMutationOptions(options));
     }
 
 export const getGetDashboardSummaryUrl = () => {

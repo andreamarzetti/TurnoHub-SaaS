@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "wouter";
-import { useGetPublicProfile, useGetAvailableSlots, useCreateBooking } from "@workspace/api-client-react";
+import { useGetPublicProfile, useGetAvailableSlots, useCreateBooking, getGetPublicProfileQueryKey, getGetAvailableSlotsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,8 @@ type Step = "service" | "datetime" | "form" | "success";
 
 export default function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: profile, isLoading } = useGetPublicProfile(slug as string, { query: { enabled: !!slug } });
+  const profileQk = getGetPublicProfileQueryKey(slug as string);
+  const { data: profile, isLoading } = useGetPublicProfile(slug as string, { query: { enabled: !!slug, queryKey: profileQk } });
 
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<number | null>(null);
@@ -25,10 +26,12 @@ export default function PublicBooking() {
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
+  const slotsParams = { date: dateStr, serviceId: selectedService || 0 };
+  const slotsQk = getGetAvailableSlotsQueryKey(slug as string, slotsParams);
   const { data: slots, isLoading: loadingSlots } = useGetAvailableSlots(
     slug as string,
-    { date: dateStr, serviceId: selectedService || 0 },
-    { query: { enabled: !!slug && !!selectedService && step === "datetime" } }
+    slotsParams,
+    { query: { enabled: !!slug && !!selectedService && step === "datetime", queryKey: slotsQk } }
   );
 
   const createBooking = useCreateBooking();
