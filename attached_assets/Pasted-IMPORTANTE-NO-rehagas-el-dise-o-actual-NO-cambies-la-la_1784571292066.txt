@@ -1,0 +1,417 @@
+IMPORTANTE:
+
+NO rehagas el diseño actual.
+
+NO cambies la landing page.
+
+NO cambies los colores.
+
+NO cambies el dashboard.
+
+NO elimines ninguna funcionalidad existente.
+
+Quiero mantener exactamente el diseño y toda la estructura actual.
+
+Solo quiero convertir TurnoHub en un SaaS completamente listo para vender comercialmente.
+
+---
+
+1. SUSCRIPCIONES
+
+---
+
+Implementar Mercado Pago para los planes.
+
+Planes:
+
+Básico
+$9.900/mes
+
+Profesional
+$14.900/mes
+
+Premium
+$19.900/mes
+
+Cada usuario tendrá:
+
+* 14 días gratis
+* Luego deberá pagar
+* Si no paga:
+
+  * bloquear acceso al dashboard
+  * mantener los datos guardados
+  * mostrar pantalla "Tu suscripción venció"
+* Al pagar nuevamente:
+
+  * reactivar automáticamente la cuenta.
+
+---
+
+2. LIMITES POR PLAN
+
+---
+
+Aplicar restricciones reales.
+
+PLAN BÁSICO
+
+* máximo 3 servicios
+* máximo 50 turnos por mes
+* sin WhatsApp automático
+* sin Mercado Pago
+* sin estadísticas avanzadas
+
+PLAN PROFESIONAL
+
+* máximo 10 servicios
+* máximo 200 turnos
+* WhatsApp
+* Email
+* Reprogramaciones
+* Estadísticas
+
+PLAN PREMIUM
+
+* ilimitado
+* múltiples profesionales
+* Mercado Pago
+* estadísticas completas
+* branding personalizado
+* dominio personalizado
+
+---
+
+3. COBRO DE RESERVAS
+
+---
+
+Agregar opción para el profesional:
+
+Cobrar:
+
+○ Gratis
+
+○ Pago presencial
+
+○ Seña
+
+○ Pago completo
+
+Si elige seña:
+
+Configurar porcentaje
+
+10%
+
+20%
+
+30%
+
+50%
+
+Al reservar:
+
+Cliente paga automáticamente mediante Mercado Pago.
+
+Si paga:
+
+El turno queda confirmado.
+
+Si no paga:
+
+Queda pendiente.
+
+---
+
+4. EMAIL AUTOMÁTICOS
+
+---
+
+Enviar email al cliente:
+
+Reserva realizada.
+
+Turno confirmado.
+
+Turno cancelado.
+
+Turno reprogramado.
+
+Recordatorio 24 horas antes.
+
+Recordatorio 2 horas antes.
+
+Enviar email también al profesional.
+
+---
+
+5. WHATSAPP AUTOMÁTICO
+
+---
+
+Enviar WhatsApp automáticamente al cliente cuando:
+
+Reserva
+
+Confirmación
+
+Cancelación
+
+Reprogramación
+
+Recordatorio 24 horas
+
+Recordatorio 2 horas
+
+Enviar también WhatsApp al profesional.
+
+---
+
+6. GOOGLE CALENDAR
+
+---
+
+Botón:
+
+Conectar Google Calendar
+
+Sincronización automática.
+
+Si el profesional crea un turno:
+
+Se agrega al calendario.
+
+Si cancela:
+
+Se elimina.
+
+Si reprograma:
+
+Se actualiza.
+
+Evitar turnos duplicados.
+
+---
+
+7. CALENDARIO
+
+---
+
+Vista:
+
+Día
+
+Semana
+
+Mes
+
+Arrastrar turnos para moverlos.
+
+Cambiar duración.
+
+Colores por servicio.
+
+Filtros.
+
+---
+
+8. CLIENTES
+
+---
+
+Ficha completa.
+
+Historial.
+
+Notas privadas.
+
+Cantidad de turnos.
+
+Ingresos generados.
+
+Última visita.
+
+Próximo turno.
+
+---
+
+9. DASHBOARD
+
+---
+
+Agregar métricas:
+
+Facturación mensual
+
+Facturación anual
+
+Clientes nuevos
+
+Clientes recurrentes
+
+Cancelaciones
+
+No asistencias
+
+Servicios más vendidos
+
+Promedio diario
+
+Ocupación semanal
+
+Gráfico mensual
+
+---
+
+10. PÁGINA DE RESERVA
+
+---
+
+Mejorar muchísimo el diseño.
+
+Agregar:
+
+Fotos
+
+Logo
+
+Redes sociales
+
+Google Maps
+
+Opiniones
+
+Preguntas frecuentes
+
+Políticas
+
+Botón WhatsApp
+
+Botón Instagram
+
+Botón Facebook
+
+---
+
+11. TURNOS
+
+---
+
+Estados:
+
+Pendiente
+
+Confirmado
+
+Pagado
+
+Seña pagada
+
+Cancelado
+
+Finalizado
+
+No asistió
+
+---
+
+12. NOTIFICACIONES
+
+---
+
+Centro de notificaciones.
+
+Cuando:
+
+Nuevo turno
+
+Cancelación
+
+Pago recibido
+
+Seña recibida
+
+Nuevo cliente
+
+Vencimiento de suscripción
+
+---
+
+13. PANEL SUPER ADMIN
+
+---
+
+Ver:
+
+Todos los usuarios.
+
+Facturación total.
+
+Clientes activos.
+
+Clientes vencidos.
+
+MRR (ingresos mensuales recurrentes)
+
+Cantidad de planes.
+
+Suspender cuentas.
+
+Eliminar cuentas.
+
+---
+
+14. SEGURIDAD
+
+---
+
+Autenticación segura.
+
+Verificación por email.
+
+Recuperar contraseña.
+
+Logs.
+
+Protección contra abuso.
+
+---
+
+15. EXPERIENCIA
+
+---
+
+Cargar muy rápido.
+
+Responsive.
+
+Animaciones suaves.
+
+Transiciones modernas.
+
+Diseño premium tipo Calendly / Stripe / Notion.
+
+---
+
+16. PRODUCCIÓN
+
+---
+
+Dejar completamente listo para vender.
+
+Sin datos de ejemplo.
+
+Sin errores.
+
+Sin botones que no funcionen.
+
+Todo conectado.
+
+Todo probado.
+
+Código limpio.
+
+Arquitectura escalable.
+
+Quiero un SaaS comercial listo para vender desde hoy sin modificar el diseño existente.
