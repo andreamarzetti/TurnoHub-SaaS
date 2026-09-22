@@ -25,6 +25,18 @@ export const professionalsTable = pgTable("professionals", {
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   currentPlan: text("current_plan"),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  // Payment configuration
+  paymentMode: text("payment_mode").notNull().default("none"),  // none | full | deposit | in_person
+  depositPercent: integer("deposit_percent").notNull().default(30),
+  // MP Connect (professional's own account)
+  mpAccessToken: text("mp_access_token"),
+  mpRefreshToken: text("mp_refresh_token"),
+  mpUserId: text("mp_user_id"),
+  mpPublicKey: text("mp_public_key"),
+  // Google Calendar
+  googleAccessToken: text("google_access_token"),
+  googleRefreshToken: text("google_refresh_token"),
+  googleCalendarId: text("google_calendar_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

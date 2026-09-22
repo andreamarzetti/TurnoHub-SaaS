@@ -79,6 +79,9 @@ export const GetMyProfessionalProfileResponse = zod.object({
   "status": zod.enum(['active', 'suspended', 'trial']),
   "currentPlan": zod.string().nullish(),
   "trialEndsAt": zod.string().nullish(),
+  "paymentMode": zod.string().optional(),
+  "depositPercent": zod.number().optional(),
+  "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -96,7 +99,9 @@ export const UpdateMyProfessionalProfileBody = zod.object({
   "whatsappNumber": zod.string().optional(),
   "instagramUrl": zod.string().optional(),
   "facebookUrl": zod.string().optional(),
-  "websiteUrl": zod.string().optional()
+  "websiteUrl": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "depositPercent": zod.number().optional()
 })
 
 export const UpdateMyProfessionalProfileResponse = zod.object({
@@ -118,7 +123,27 @@ export const UpdateMyProfessionalProfileResponse = zod.object({
   "status": zod.enum(['active', 'suspended', 'trial']),
   "currentPlan": zod.string().nullish(),
   "trialEndsAt": zod.string().nullish(),
+  "paymentMode": zod.string().optional(),
+  "depositPercent": zod.number().optional(),
+  "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get Mercado Pago connection status for professional
+ */
+export const GetMpConnectStatusResponse = zod.object({
+  "connected": zod.boolean(),
+  "mpUserId": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get MP OAuth authorization URL
+ */
+export const GetMpConnectUrlResponse = zod.object({
+  "authUrl": zod.string()
 })
 
 
@@ -145,6 +170,9 @@ export const GetProfessionalResponse = zod.object({
   "status": zod.enum(['active', 'suspended', 'trial']),
   "currentPlan": zod.string().nullish(),
   "trialEndsAt": zod.string().nullish(),
+  "paymentMode": zod.string().optional(),
+  "depositPercent": zod.number().optional(),
+  "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -214,7 +242,7 @@ export const DeleteServiceParams = zod.object({
 
 
 /**
- * @summary Get professional's schedule
+ * @summary Get professional's availability slots
  */
 export const GetMyAvailabilityResponseItem = zod.object({
   "id": zod.number(),
@@ -228,7 +256,7 @@ export const GetMyAvailabilityResponse = zod.array(GetMyAvailabilityResponseItem
 
 
 /**
- * @summary Add a working schedule slot
+ * @summary Add an availability slot
  */
 export const CreateAvailabilitySlotBody = zod.object({
   "dayOfWeek": zod.number(),
@@ -267,10 +295,10 @@ export const DeleteAvailabilitySlotParams = zod.object({
  * @summary Get professional's appointments
  */
 export const GetMyAppointmentsQueryParams = zod.object({
-  "date": zod.coerce.string().nullish(),
-  "status": zod.coerce.string().nullish(),
-  "startDate": zod.coerce.string().nullish(),
-  "endDate": zod.coerce.string().nullish()
+  "date": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "startDate": zod.coerce.string().optional(),
+  "endDate": zod.coerce.string().optional()
 })
 
 export const GetMyAppointmentsResponseItem = zod.object({
@@ -287,6 +315,11 @@ export const GetMyAppointmentsResponseItem = zod.object({
   "endTime": zod.string(),
   "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
+  "paymentId": zod.string().nullish(),
+  "paymentAmount": zod.number().nullish(),
+  "paymentDate": zod.string().nullish(),
+  "paymentMode": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const GetMyAppointmentsResponse = zod.array(GetMyAppointmentsResponseItem)
@@ -310,6 +343,11 @@ export const GetAppointmentResponse = zod.object({
   "endTime": zod.string(),
   "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
+  "paymentId": zod.string().nullish(),
+  "paymentAmount": zod.number().nullish(),
+  "paymentDate": zod.string().nullish(),
+  "paymentMode": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -323,7 +361,9 @@ export const UpdateAppointmentBody = zod.object({
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
   "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']).optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const UpdateAppointmentResponse = zod.object({
@@ -340,22 +380,23 @@ export const UpdateAppointmentResponse = zod.object({
   "endTime": zod.string(),
   "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
+  "paymentId": zod.string().nullish(),
+  "paymentAmount": zod.number().nullish(),
+  "paymentDate": zod.string().nullish(),
+  "paymentMode": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
 
-export const CancelAppointmentParams = zod.object({
+export const DeleteAppointmentParams = zod.object({
   "appointmentId": zod.coerce.number()
 })
 
 
 /**
- * @summary Get professional's client list
+ * @summary Get professional's clients
  */
-export const GetMyClientsQueryParams = zod.object({
-  "search": zod.coerce.string().nullish()
-})
-
 export const GetMyClientsResponseItem = zod.object({
   "id": zod.number(),
   "professionalId": zod.number(),
@@ -395,6 +436,11 @@ export const GetClientResponse = zod.object({
   "endTime": zod.string(),
   "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
+  "paymentId": zod.string().nullish(),
+  "paymentAmount": zod.number().nullish(),
+  "paymentDate": zod.string().nullish(),
+  "paymentMode": zod.string().nullish(),
   "createdAt": zod.string()
 })),
   "createdAt": zod.string()
@@ -417,7 +463,7 @@ export const GetPlansResponse = zod.array(GetPlansResponseItem)
 
 
 /**
- * @summary Get current subscription
+ * @summary Get current professional's subscription
  */
 export const GetMySubscriptionResponse = zod.object({
   "id": zod.number(),
@@ -427,17 +473,21 @@ export const GetMySubscriptionResponse = zod.object({
   "currentPeriodStart": zod.string(),
   "currentPeriodEnd": zod.string(),
   "cancelAtPeriodEnd": zod.boolean().optional(),
+  "mpPreapprovalId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
 
+/**
+ * @summary Create or update subscription (internal/admin)
+ */
 export const CreateSubscriptionBody = zod.object({
   "planSlug": zod.string()
 })
 
 
 /**
- * @summary Cancel current subscription
+ * @summary Cancel subscription at period end
  */
 export const CancelSubscriptionResponse = zod.object({
   "id": zod.number(),
@@ -447,12 +497,13 @@ export const CancelSubscriptionResponse = zod.object({
   "currentPeriodStart": zod.string(),
   "currentPeriodEnd": zod.string(),
   "cancelAtPeriodEnd": zod.boolean().optional(),
+  "mpPreapprovalId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
 
 /**
- * @summary Create a Mercado Pago subscription checkout URL
+ * @summary Create Mercado Pago preapproval checkout for subscription
  */
 export const CreateMpCheckoutBody = zod.object({
   "planSlug": zod.string()
@@ -478,49 +529,7 @@ export const GetDashboardSummaryResponse = zod.object({
 
 
 /**
- * @summary Get next upcoming appointments
- */
-export const GetUpcomingAppointmentsQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish()
-})
-
-export const GetUpcomingAppointmentsResponseItem = zod.object({
-  "id": zod.number(),
-  "professionalId": zod.number(),
-  "serviceId": zod.number(),
-  "serviceName": zod.string().optional(),
-  "clientId": zod.number().nullish(),
-  "clientName": zod.string(),
-  "clientEmail": zod.string(),
-  "clientPhone": zod.string().nullish(),
-  "date": zod.string(),
-  "startTime": zod.string(),
-  "endTime": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'cancelled', 'completed', 'rescheduled']),
-  "notes": zod.string().nullish(),
-  "createdAt": zod.string()
-})
-export const GetUpcomingAppointmentsResponse = zod.array(GetUpcomingAppointmentsResponseItem)
-
-
-/**
- * @summary Get recently active clients
- */
-export const GetRecentClientsResponseItem = zod.object({
-  "id": zod.number(),
-  "professionalId": zod.number(),
-  "name": zod.string(),
-  "email": zod.string(),
-  "phone": zod.string().nullish(),
-  "totalAppointments": zod.number(),
-  "lastAppointmentAt": zod.string().nullable(),
-  "createdAt": zod.string()
-})
-export const GetRecentClientsResponse = zod.array(GetRecentClientsResponseItem)
-
-
-/**
- * @summary Appointments grouped by day for the current week
+ * @summary Appointments count by day (last 7 days)
  */
 export const GetAppointmentsByDayResponseItem = zod.object({
   "date": zod.string(),
@@ -531,7 +540,7 @@ export const GetAppointmentsByDayResponse = zod.array(GetAppointmentsByDayRespon
 
 
 /**
- * @summary Global platform stats (super admin only)
+ * @summary Get platform-level stats (super admin only)
  */
 export const GetAdminStatsResponse = zod.object({
   "totalProfessionals": zod.number(),
@@ -547,11 +556,6 @@ export const GetAdminStatsResponse = zod.object({
 /**
  * @summary List all professionals (super admin only)
  */
-export const GetAdminProfessionalsQueryParams = zod.object({
-  "status": zod.coerce.string().nullish(),
-  "search": zod.coerce.string().nullish()
-})
-
 export const GetAdminProfessionalsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -575,19 +579,6 @@ export const UpdateProfessionalStatusBody = zod.object({
   "status": zod.enum(['active', 'suspended'])
 })
 
-export const UpdateProfessionalStatusResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "email": zod.string(),
-  "profession": zod.string(),
-  "status": zod.string(),
-  "currentPlan": zod.string().nullable(),
-  "trialEndsAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "totalAppointments": zod.number(),
-  "totalClients": zod.number()
-})
-
 
 export const UpdateProfessionalPlanParams = zod.object({
   "professionalId": zod.coerce.number()
@@ -597,22 +588,9 @@ export const UpdateProfessionalPlanBody = zod.object({
   "plan": zod.enum(['basico', 'profesional', 'premium'])
 })
 
-export const UpdateProfessionalPlanResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "email": zod.string(),
-  "profession": zod.string(),
-  "status": zod.string(),
-  "currentPlan": zod.string().nullable(),
-  "trialEndsAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "totalAppointments": zod.number(),
-  "totalClients": zod.number()
-})
-
 
 /**
- * @summary Get public professional profile for booking
+ * @summary Get public booking profile
  */
 export const GetPublicProfileParams = zod.object({
   "slug": zod.coerce.string()
@@ -632,6 +610,8 @@ export const GetPublicProfileResponse = zod.object({
   "instagramUrl": zod.string().nullish(),
   "facebookUrl": zod.string().nullish(),
   "websiteUrl": zod.string().nullish(),
+  "paymentMode": zod.string(),
+  "depositPercent": zod.number(),
   "services": zod.array(zod.object({
   "id": zod.number(),
   "professionalId": zod.number(),
@@ -648,7 +628,7 @@ export const GetPublicProfileResponse = zod.object({
 
 
 /**
- * @summary Get available time slots for a date
+ * @summary Get available slots for a professional on a given date
  */
 export const GetAvailableSlotsParams = zod.object({
   "slug": zod.coerce.string()

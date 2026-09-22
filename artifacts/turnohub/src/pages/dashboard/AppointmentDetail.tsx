@@ -1,4 +1,4 @@
-import { useGetAppointment, useUpdateAppointment, useCancelAppointment, getGetAppointmentQueryKey } from "@workspace/api-client-react";
+import { useGetAppointment, useUpdateAppointment, getGetAppointmentQueryKey } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,6 @@ export default function AppointmentDetail() {
   });
 
   const updateMutation = useUpdateAppointment();
-  const cancelMutation = useCancelAppointment();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -59,7 +58,7 @@ export default function AppointmentDetail() {
 
   const handleCancel = () => {
     if (confirm("¿Seguro que querés cancelar este turno?")) {
-      cancelMutation.mutate({ appointmentId }, {
+      updateMutation.mutate({ appointmentId, data: { status: "cancelled" } }, {
         onSuccess: () => {
           toast({ title: "Turno cancelado" });
           queryClient.invalidateQueries({ queryKey: getGetAppointmentQueryKey(appointmentId) });
@@ -159,7 +158,7 @@ export default function AppointmentDetail() {
                 <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar como completado
               </Button>
             )}
-            <Button variant="destructive" onClick={handleCancel} disabled={cancelMutation.isPending}>
+            <Button variant="destructive" onClick={handleCancel} disabled={updateMutation.isPending}>
               <XCircle className="mr-2 h-4 w-4" /> Cancelar turno
             </Button>
           </CardFooter>

@@ -1,4 +1,4 @@
-import { useGetMyClients, getGetMyClientsQueryKey } from "@workspace/api-client-react";
+import { useGetMyClients } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -9,9 +9,10 @@ import { useState } from "react";
 
 export default function Clients() {
   const [search, setSearch] = useState("");
-  const params = { search: search || undefined };
-  const { data: clients, isLoading } = useGetMyClients(params, {
-    query: { queryKey: getGetMyClientsQueryKey(params) },
+  const { data: clients, isLoading } = useGetMyClients();
+  const filteredClients = clients?.filter((client) => {
+    const term = search.trim().toLowerCase();
+    return !term || client.name.toLowerCase().includes(term) || client.email.toLowerCase().includes(term);
   });
 
   return (
@@ -38,9 +39,9 @@ export default function Clients() {
             <div className="p-6 space-y-4">
               {[1, 2, 3].map(i => <div key={i} className="h-14 animate-pulse bg-muted rounded-xl" />)}
             </div>
-          ) : clients && clients.length > 0 ? (
+          ) : filteredClients && filteredClients.length > 0 ? (
             <div className="divide-y">
-              {clients.map(client => (
+              {filteredClients.map(client => (
                 <Link key={client.id} href={`/clients/${client.id}`}>
                   <div className="flex items-center justify-between px-4 py-4 hover:bg-muted/40 transition-colors cursor-pointer gap-3">
                     <div className="flex items-center gap-3">

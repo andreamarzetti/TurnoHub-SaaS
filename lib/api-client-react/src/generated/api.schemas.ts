@@ -81,6 +81,10 @@ export interface Professional {
   currentPlan?: string | null;
   /** @nullable */
   trialEndsAt?: string | null;
+  paymentMode?: string;
+  depositPercent?: number;
+  /** @nullable */
+  mpUserId?: string | null;
   createdAt: string;
 }
 
@@ -95,6 +99,8 @@ export interface ProfessionalUpdate {
   instagramUrl?: string;
   facebookUrl?: string;
   websiteUrl?: string;
+  paymentMode?: string;
+  depositPercent?: number;
 }
 
 export interface ProfessionalAdmin {
@@ -135,6 +141,16 @@ export const ProfessionalPlanUpdatePlan = {
 
 export interface ProfessionalPlanUpdate {
   plan: ProfessionalPlanUpdatePlan;
+}
+
+export interface MpConnectStatus {
+  connected: boolean;
+  /** @nullable */
+  mpUserId?: string | null;
+}
+
+export interface MpConnectUrlResponse {
+  authUrl: string;
 }
 
 export interface Service {
@@ -221,6 +237,16 @@ export interface Appointment {
   status: AppointmentStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  paymentStatus?: string | null;
+  /** @nullable */
+  paymentId?: string | null;
+  /** @nullable */
+  paymentAmount?: number | null;
+  /** @nullable */
+  paymentDate?: string | null;
+  /** @nullable */
+  paymentMode?: string | null;
   createdAt: string;
 }
 
@@ -241,6 +267,8 @@ export interface AppointmentUpdate {
   endTime?: string;
   status?: AppointmentUpdateStatus;
   notes?: string;
+  paymentStatus?: string;
+  paymentMode?: string;
 }
 
 export interface Client {
@@ -301,6 +329,8 @@ export interface Subscription {
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd?: boolean;
+  /** @nullable */
+  mpPreapprovalId?: string | null;
   createdAt: string;
 }
 
@@ -366,6 +396,8 @@ export interface PublicProfile {
   facebookUrl?: string | null;
   /** @nullable */
   websiteUrl?: string | null;
+  paymentMode: string;
+  depositPercent: number;
   services: Service[];
 }
 
@@ -385,48 +417,39 @@ export interface BookingInput {
   notes?: string;
 }
 
+export interface BookingResult {
+  id: number;
+  professionalId: number;
+  serviceId: number;
+  serviceName?: string;
+  /** @nullable */
+  clientId?: number | null;
+  clientName: string;
+  clientEmail: string;
+  /** @nullable */
+  clientPhone?: string | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  paymentStatus?: string | null;
+  /** @nullable */
+  paymentMode?: string | null;
+  createdAt: string;
+  /** @nullable */
+  waUrl?: string | null;
+  /** @nullable */
+  paymentUrl?: string | null;
+}
+
 export type GetMyAppointmentsParams = {
-/**
- * @nullable
- */
-date?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-startDate?: string | null;
-/**
- * @nullable
- */
-endDate?: string | null;
-};
-
-export type GetMyClientsParams = {
-/**
- * @nullable
- */
-search?: string | null;
-};
-
-export type GetUpcomingAppointmentsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-};
-
-export type GetAdminProfessionalsParams = {
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-search?: string | null;
+date?: string;
+status?: string;
+startDate?: string;
+endDate?: string;
 };
 
 export type GetAvailableSlotsParams = {

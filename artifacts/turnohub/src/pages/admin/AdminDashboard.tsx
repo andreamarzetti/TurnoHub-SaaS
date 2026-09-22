@@ -1,4 +1,4 @@
-import { useGetAdminStats, useGetAdminProfessionals, getGetAdminProfessionalsQueryKey } from "@workspace/api-client-react";
+import { useGetAdminStats, useGetAdminProfessionals } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Activity, Calendar, BadgeDollarSign } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -14,10 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: loadingStats } = useGetAdminStats();
-  const params = { status: "active" };
-  const { data: professionals, isLoading: loadingProfs } = useGetAdminProfessionals(params, {
-    query: { queryKey: getGetAdminProfessionalsQueryKey(params) },
-  });
+  const { data: professionals, isLoading: loadingProfs } = useGetAdminProfessionals();
 
   if (loadingStats || loadingProfs) {
     return (

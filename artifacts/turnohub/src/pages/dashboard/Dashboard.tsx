@@ -1,4 +1,4 @@
-import { useGetDashboardSummary, useGetUpcomingAppointments, useGetAppointmentsByDay, getGetUpcomingAppointmentsQueryKey } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetMyAppointments, useGetAppointmentsByDay, getGetMyAppointmentsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, Users, Clock, TrendingUp, ArrowRight, CheckCircle2, Share2 } from "lucide-react";
 import { Link } from "wouter";
@@ -27,10 +27,13 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
 
-  const upcomingParams = { limit: 5 };
-  const { data: upcoming, isLoading: loadingUpcoming } = useGetUpcomingAppointments(upcomingParams, {
-    query: { queryKey: getGetUpcomingAppointmentsQueryKey(upcomingParams) },
+  const upcomingParams = { startDate: format(new Date(), "yyyy-MM-dd") };
+  const { data: upcomingAppointments, isLoading: loadingUpcoming } = useGetMyAppointments(upcomingParams, {
+    query: { queryKey: getGetMyAppointmentsQueryKey(upcomingParams) },
   });
+  const upcoming = upcomingAppointments
+    ?.filter((appointment) => appointment.status !== "cancelled")
+    .slice(0, 5);
 
   const { data: chartData, isLoading: loadingChart } = useGetAppointmentsByDay();
 

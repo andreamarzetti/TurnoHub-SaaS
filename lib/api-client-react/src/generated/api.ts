@@ -29,18 +29,18 @@ import type {
   AvailabilitySlotInput,
   AvailabilitySlotUpdate,
   BookingInput,
+  BookingResult,
   Client,
   ClientDetail,
   DashboardSummary,
-  GetAdminProfessionalsParams,
   GetAvailableSlotsParams,
   GetMyAppointmentsParams,
-  GetMyClientsParams,
-  GetUpcomingAppointmentsParams,
   HealthStatus,
   LoginInput,
   MpCheckoutInput,
   MpCheckoutResponse,
+  MpConnectStatus,
+  MpConnectUrlResponse,
   Plan,
   Professional,
   ProfessionalAdmin,
@@ -584,6 +584,230 @@ export const useUpdateMyProfessionalProfile = <TError = ErrorType<unknown>,
       return useMutation(getUpdateMyProfessionalProfileMutationOptions(options));
     }
 
+export const getGetMpConnectStatusUrl = () => {
+
+
+
+
+  return `/api/professionals/me/mp-connect/status`
+}
+
+/**
+ * @summary Get Mercado Pago connection status for professional
+ */
+export const getMpConnectStatus = async ( options?: RequestInit): Promise<MpConnectStatus> => {
+
+  return customFetch<MpConnectStatus>(getGetMpConnectStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMpConnectStatusQueryKey = () => {
+    return [
+    `/api/professionals/me/mp-connect/status`
+    ] as const;
+    }
+
+
+export const getGetMpConnectStatusQueryOptions = <TData = Awaited<ReturnType<typeof getMpConnectStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMpConnectStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMpConnectStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMpConnectStatus>>> = ({ signal }) => getMpConnectStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMpConnectStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMpConnectStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getMpConnectStatus>>>
+export type GetMpConnectStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get Mercado Pago connection status for professional
+ */
+
+export function useGetMpConnectStatus<TData = Awaited<ReturnType<typeof getMpConnectStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMpConnectStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMpConnectStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMpConnectUrlUrl = () => {
+
+
+
+
+  return `/api/professionals/me/mp-connect/url`
+}
+
+/**
+ * @summary Get MP OAuth authorization URL
+ */
+export const getMpConnectUrl = async ( options?: RequestInit): Promise<MpConnectUrlResponse> => {
+
+  return customFetch<MpConnectUrlResponse>(getGetMpConnectUrlUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMpConnectUrlQueryKey = () => {
+    return [
+    `/api/professionals/me/mp-connect/url`
+    ] as const;
+    }
+
+
+export const getGetMpConnectUrlQueryOptions = <TData = Awaited<ReturnType<typeof getMpConnectUrl>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMpConnectUrl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMpConnectUrlQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMpConnectUrl>>> = ({ signal }) => getMpConnectUrl({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMpConnectUrl>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMpConnectUrlQueryResult = NonNullable<Awaited<ReturnType<typeof getMpConnectUrl>>>
+export type GetMpConnectUrlQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get MP OAuth authorization URL
+ */
+
+export function useGetMpConnectUrl<TData = Awaited<ReturnType<typeof getMpConnectUrl>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMpConnectUrl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMpConnectUrlQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDisconnectMpConnectUrl = () => {
+
+
+
+
+  return `/api/professionals/me/mp-connect`
+}
+
+/**
+ * @summary Disconnect professional's Mercado Pago account
+ */
+export const disconnectMpConnect = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDisconnectMpConnectUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDisconnectMpConnectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectMpConnect>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectMpConnect>>, TError,void, TContext> => {
+
+const mutationKey = ['disconnectMpConnect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectMpConnect>>, void> = () => {
+
+
+          return  disconnectMpConnect(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectMpConnectMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectMpConnect>>>
+
+    export type DisconnectMpConnectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect professional's Mercado Pago account
+ */
+export const useDisconnectMpConnect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectMpConnect>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectMpConnect>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDisconnectMpConnectMutationOptions(options));
+    }
+
 export const getGetProfessionalUrl = (professionalId: number,) => {
 
 
@@ -758,7 +982,7 @@ export const createService = async (serviceInput: ServiceInput, options?: Reques
 
 
 
-export const getCreateServiceMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateServiceMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext> => {
 
@@ -787,12 +1011,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateServiceMutationResult = NonNullable<Awaited<ReturnType<typeof createService>>>
     export type CreateServiceMutationBody = BodyType<ServiceInput>
-    export type CreateServiceMutationError = ErrorType<unknown>
+    export type CreateServiceMutationError = ErrorType<void>
 
     /**
  * @summary Create a new service
  */
-export const useCreateService = <TError = ErrorType<unknown>,
+export const useCreateService = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createService>>,
@@ -942,7 +1166,7 @@ export const getGetMyAvailabilityUrl = () => {
 }
 
 /**
- * @summary Get professional's schedule
+ * @summary Get professional's availability slots
  */
 export const getMyAvailability = async ( options?: RequestInit): Promise<AvailabilitySlot[]> => {
 
@@ -989,7 +1213,7 @@ export type GetMyAvailabilityQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get professional's schedule
+ * @summary Get professional's availability slots
  */
 
 export function useGetMyAvailability<TData = Awaited<ReturnType<typeof getMyAvailability>>, TError = ErrorType<unknown>>(
@@ -1019,7 +1243,7 @@ export const getCreateAvailabilitySlotUrl = () => {
 }
 
 /**
- * @summary Add a working schedule slot
+ * @summary Add an availability slot
  */
 export const createAvailabilitySlot = async (availabilitySlotInput: AvailabilitySlotInput, options?: RequestInit): Promise<AvailabilitySlot> => {
 
@@ -1068,7 +1292,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateAvailabilitySlotMutationError = ErrorType<unknown>
 
     /**
- * @summary Add a working schedule slot
+ * @summary Add an availability slot
  */
 export const useCreateAvailabilitySlot = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAvailabilitySlot>>, TError,{data: BodyType<AvailabilitySlotInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1432,7 +1656,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUpdateAppointmentMutationOptions(options));
     }
 
-export const getCancelAppointmentUrl = (appointmentId: number,) => {
+export const getDeleteAppointmentUrl = (appointmentId: number,) => {
 
 
 
@@ -1440,9 +1664,9 @@ export const getCancelAppointmentUrl = (appointmentId: number,) => {
   return `/api/appointments/${appointmentId}`
 }
 
-export const cancelAppointment = async (appointmentId: number, options?: RequestInit): Promise<void> => {
+export const deleteAppointment = async (appointmentId: number, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getCancelAppointmentUrl(appointmentId),
+  return customFetch<void>(getDeleteAppointmentUrl(appointmentId),
   {
     ...options,
     method: 'DELETE'
@@ -1454,11 +1678,11 @@ export const cancelAppointment = async (appointmentId: number, options?: Request
 
 
 
-export const getCancelAppointmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelAppointment>>, TError,{appointmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof cancelAppointment>>, TError,{appointmentId: number}, TContext> => {
+export const getDeleteAppointmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAppointment>>, TError,{appointmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAppointment>>, TError,{appointmentId: number}, TContext> => {
 
-const mutationKey = ['cancelAppointment'];
+const mutationKey = ['deleteAppointment'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1468,10 +1692,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelAppointment>>, {appointmentId: number}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAppointment>>, {appointmentId: number}> = (props) => {
           const {appointmentId} = props ?? {};
 
-          return  cancelAppointment(appointmentId,requestOptions)
+          return  deleteAppointment(appointmentId,requestOptions)
         }
 
 
@@ -1481,42 +1705,35 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type CancelAppointmentMutationResult = NonNullable<Awaited<ReturnType<typeof cancelAppointment>>>
+    export type DeleteAppointmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAppointment>>>
 
-    export type CancelAppointmentMutationError = ErrorType<unknown>
+    export type DeleteAppointmentMutationError = ErrorType<unknown>
 
-    export const useCancelAppointment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelAppointment>>, TError,{appointmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    export const useDeleteAppointment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAppointment>>, TError,{appointmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof cancelAppointment>>,
+        Awaited<ReturnType<typeof deleteAppointment>>,
         TError,
         {appointmentId: number},
         TContext
       > => {
-      return useMutation(getCancelAppointmentMutationOptions(options));
+      return useMutation(getDeleteAppointmentMutationOptions(options));
     }
 
-export const getGetMyClientsUrl = (params?: GetMyClientsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getGetMyClientsUrl = () => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/clients?${stringifiedParams}` : `/api/clients`
+  return `/api/clients`
 }
 
 /**
- * @summary Get professional's client list
+ * @summary Get professional's clients
  */
-export const getMyClients = async (params?: GetMyClientsParams, options?: RequestInit): Promise<Client[]> => {
+export const getMyClients = async ( options?: RequestInit): Promise<Client[]> => {
 
-  return customFetch<Client[]>(getGetMyClientsUrl(params),
+  return customFetch<Client[]>(getGetMyClientsUrl(),
   {
     ...options,
     method: 'GET'
@@ -1529,23 +1746,23 @@ export const getMyClients = async (params?: GetMyClientsParams, options?: Reques
 
 
 
-export const getGetMyClientsQueryKey = (params?: GetMyClientsParams,) => {
+export const getGetMyClientsQueryKey = () => {
     return [
-    `/api/clients`, ...(params ? [params] : [])
+    `/api/clients`
     ] as const;
     }
 
 
-export const getGetMyClientsQueryOptions = <TData = Awaited<ReturnType<typeof getMyClients>>, TError = ErrorType<unknown>>(params?: GetMyClientsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMyClientsQueryOptions = <TData = Awaited<ReturnType<typeof getMyClients>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetMyClientsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetMyClientsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyClients>>> = ({ signal }) => getMyClients(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyClients>>> = ({ signal }) => getMyClients({ signal, ...requestOptions });
 
 
 
@@ -1559,15 +1776,15 @@ export type GetMyClientsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get professional's client list
+ * @summary Get professional's clients
  */
 
 export function useGetMyClients<TData = Awaited<ReturnType<typeof getMyClients>>, TError = ErrorType<unknown>>(
- params?: GetMyClientsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetMyClientsQueryOptions(params,options)
+  const queryOptions = getGetMyClientsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1737,7 +1954,7 @@ export const getGetMySubscriptionUrl = () => {
 }
 
 /**
- * @summary Get current subscription
+ * @summary Get current professional's subscription
  */
 export const getMySubscription = async ( options?: RequestInit): Promise<Subscription> => {
 
@@ -1784,7 +2001,7 @@ export type GetMySubscriptionQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get current subscription
+ * @summary Get current professional's subscription
  */
 
 export function useGetMySubscription<TData = Awaited<ReturnType<typeof getMySubscription>>, TError = ErrorType<unknown>>(
@@ -1813,6 +2030,9 @@ export const getCreateSubscriptionUrl = () => {
   return `/api/subscriptions/me`
 }
 
+/**
+ * @summary Create or update subscription (internal/admin)
+ */
 export const createSubscription = async (subscriptionInput: SubscriptionInput, options?: RequestInit): Promise<Subscription> => {
 
   return customFetch<Subscription>(getCreateSubscriptionUrl(),
@@ -1859,7 +2079,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateSubscriptionMutationBody = BodyType<SubscriptionInput>
     export type CreateSubscriptionMutationError = ErrorType<unknown>
 
-    export const useCreateSubscription = <TError = ErrorType<unknown>,
+    /**
+ * @summary Create or update subscription (internal/admin)
+ */
+export const useCreateSubscription = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{data: BodyType<SubscriptionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createSubscription>>,
@@ -1879,7 +2102,7 @@ export const getCancelSubscriptionUrl = () => {
 }
 
 /**
- * @summary Cancel current subscription
+ * @summary Cancel subscription at period end
  */
 export const cancelSubscription = async ( options?: RequestInit): Promise<Subscription> => {
 
@@ -1927,7 +2150,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CancelSubscriptionMutationError = ErrorType<unknown>
 
     /**
- * @summary Cancel current subscription
+ * @summary Cancel subscription at period end
  */
 export const useCancelSubscription = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelSubscription>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1949,7 +2172,7 @@ export const getCreateMpCheckoutUrl = () => {
 }
 
 /**
- * @summary Create a Mercado Pago subscription checkout URL
+ * @summary Create Mercado Pago preapproval checkout for subscription
  */
 export const createMpCheckout = async (mpCheckoutInput: MpCheckoutInput, options?: RequestInit): Promise<MpCheckoutResponse> => {
 
@@ -1998,7 +2221,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateMpCheckoutMutationError = ErrorType<unknown>
 
     /**
- * @summary Create a Mercado Pago subscription checkout URL
+ * @summary Create Mercado Pago preapproval checkout for subscription
  */
 export const useCreateMpCheckout = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMpCheckout>>, TError,{data: BodyType<MpCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -2011,7 +2234,7 @@ export const useCreateMpCheckout = <TError = ErrorType<unknown>,
       return useMutation(getCreateMpCheckoutMutationOptions(options));
     }
 
-export const getMpWebhookUrl = () => {
+export const getMpSubscriptionWebhookUrl = () => {
 
 
 
@@ -2020,11 +2243,11 @@ export const getMpWebhookUrl = () => {
 }
 
 /**
- * @summary Mercado Pago payment webhook (public)
+ * @summary Mercado Pago webhook for subscription events
  */
-export const mpWebhook = async ( options?: RequestInit): Promise<void> => {
+export const mpSubscriptionWebhook = async ( options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getMpWebhookUrl(),
+  return customFetch<void>(getMpSubscriptionWebhookUrl(),
   {
     ...options,
     method: 'POST'
@@ -2036,11 +2259,11 @@ export const mpWebhook = async ( options?: RequestInit): Promise<void> => {
 
 
 
-export const getMpWebhookMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext> => {
+export const getMpSubscriptionWebhookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpSubscriptionWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof mpSubscriptionWebhook>>, TError,void, TContext> => {
 
-const mutationKey = ['mpWebhook'];
+const mutationKey = ['mpSubscriptionWebhook'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2050,10 +2273,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mpWebhook>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mpSubscriptionWebhook>>, void> = () => {
 
 
-          return  mpWebhook(requestOptions)
+          return  mpSubscriptionWebhook(requestOptions)
         }
 
 
@@ -2063,22 +2286,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type MpWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof mpWebhook>>>
+    export type MpSubscriptionWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof mpSubscriptionWebhook>>>
 
-    export type MpWebhookMutationError = ErrorType<unknown>
+    export type MpSubscriptionWebhookMutationError = ErrorType<unknown>
 
     /**
- * @summary Mercado Pago payment webhook (public)
+ * @summary Mercado Pago webhook for subscription events
  */
-export const useMpWebhook = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useMpSubscriptionWebhook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mpSubscriptionWebhook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof mpWebhook>>,
+        Awaited<ReturnType<typeof mpSubscriptionWebhook>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getMpWebhookMutationOptions(options));
+      return useMutation(getMpSubscriptionWebhookMutationOptions(options));
     }
 
 export const getGetDashboardSummaryUrl = () => {
@@ -2158,167 +2381,6 @@ export function useGetDashboardSummary<TData = Awaited<ReturnType<typeof getDash
 
 
 
-export const getGetUpcomingAppointmentsUrl = (params?: GetUpcomingAppointmentsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/dashboard/upcoming?${stringifiedParams}` : `/api/dashboard/upcoming`
-}
-
-/**
- * @summary Get next upcoming appointments
- */
-export const getUpcomingAppointments = async (params?: GetUpcomingAppointmentsParams, options?: RequestInit): Promise<Appointment[]> => {
-
-  return customFetch<Appointment[]>(getGetUpcomingAppointmentsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetUpcomingAppointmentsQueryKey = (params?: GetUpcomingAppointmentsParams,) => {
-    return [
-    `/api/dashboard/upcoming`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetUpcomingAppointmentsQueryOptions = <TData = Awaited<ReturnType<typeof getUpcomingAppointments>>, TError = ErrorType<unknown>>(params?: GetUpcomingAppointmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUpcomingAppointments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetUpcomingAppointmentsQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUpcomingAppointments>>> = ({ signal }) => getUpcomingAppointments(params, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUpcomingAppointments>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetUpcomingAppointmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getUpcomingAppointments>>>
-export type GetUpcomingAppointmentsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Get next upcoming appointments
- */
-
-export function useGetUpcomingAppointments<TData = Awaited<ReturnType<typeof getUpcomingAppointments>>, TError = ErrorType<unknown>>(
- params?: GetUpcomingAppointmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUpcomingAppointments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetUpcomingAppointmentsQueryOptions(params,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getGetRecentClientsUrl = () => {
-
-
-
-
-  return `/api/dashboard/recent-clients`
-}
-
-/**
- * @summary Get recently active clients
- */
-export const getRecentClients = async ( options?: RequestInit): Promise<Client[]> => {
-
-  return customFetch<Client[]>(getGetRecentClientsUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetRecentClientsQueryKey = () => {
-    return [
-    `/api/dashboard/recent-clients`
-    ] as const;
-    }
-
-
-export const getGetRecentClientsQueryOptions = <TData = Awaited<ReturnType<typeof getRecentClients>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecentClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetRecentClientsQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecentClients>>> = ({ signal }) => getRecentClients({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecentClients>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetRecentClientsQueryResult = NonNullable<Awaited<ReturnType<typeof getRecentClients>>>
-export type GetRecentClientsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Get recently active clients
- */
-
-export function useGetRecentClients<TData = Awaited<ReturnType<typeof getRecentClients>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecentClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetRecentClientsQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
 export const getGetAppointmentsByDayUrl = () => {
 
 
@@ -2328,7 +2390,7 @@ export const getGetAppointmentsByDayUrl = () => {
 }
 
 /**
- * @summary Appointments grouped by day for the current week
+ * @summary Appointments count by day (last 7 days)
  */
 export const getAppointmentsByDay = async ( options?: RequestInit): Promise<AppointmentDayStat[]> => {
 
@@ -2375,7 +2437,7 @@ export type GetAppointmentsByDayQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Appointments grouped by day for the current week
+ * @summary Appointments count by day (last 7 days)
  */
 
 export function useGetAppointmentsByDay<TData = Awaited<ReturnType<typeof getAppointmentsByDay>>, TError = ErrorType<unknown>>(
@@ -2405,7 +2467,7 @@ export const getGetAdminStatsUrl = () => {
 }
 
 /**
- * @summary Global platform stats (super admin only)
+ * @summary Get platform-level stats (super admin only)
  */
 export const getAdminStats = async ( options?: RequestInit): Promise<AdminStats> => {
 
@@ -2452,7 +2514,7 @@ export type GetAdminStatsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Global platform stats (super admin only)
+ * @summary Get platform-level stats (super admin only)
  */
 
 export function useGetAdminStats<TData = Awaited<ReturnType<typeof getAdminStats>>, TError = ErrorType<unknown>>(
@@ -2473,27 +2535,20 @@ export function useGetAdminStats<TData = Awaited<ReturnType<typeof getAdminStats
 
 
 
-export const getGetAdminProfessionalsUrl = (params?: GetAdminProfessionalsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getGetAdminProfessionalsUrl = () => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/admin/professionals?${stringifiedParams}` : `/api/admin/professionals`
+  return `/api/admin/professionals`
 }
 
 /**
  * @summary List all professionals (super admin only)
  */
-export const getAdminProfessionals = async (params?: GetAdminProfessionalsParams, options?: RequestInit): Promise<ProfessionalAdmin[]> => {
+export const getAdminProfessionals = async ( options?: RequestInit): Promise<ProfessionalAdmin[]> => {
 
-  return customFetch<ProfessionalAdmin[]>(getGetAdminProfessionalsUrl(params),
+  return customFetch<ProfessionalAdmin[]>(getGetAdminProfessionalsUrl(),
   {
     ...options,
     method: 'GET'
@@ -2506,23 +2561,23 @@ export const getAdminProfessionals = async (params?: GetAdminProfessionalsParams
 
 
 
-export const getGetAdminProfessionalsQueryKey = (params?: GetAdminProfessionalsParams,) => {
+export const getGetAdminProfessionalsQueryKey = () => {
     return [
-    `/api/admin/professionals`, ...(params ? [params] : [])
+    `/api/admin/professionals`
     ] as const;
     }
 
 
-export const getGetAdminProfessionalsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminProfessionals>>, TError = ErrorType<unknown>>(params?: GetAdminProfessionalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProfessionals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAdminProfessionalsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminProfessionals>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProfessionals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetAdminProfessionalsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminProfessionalsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminProfessionals>>> = ({ signal }) => getAdminProfessionals(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminProfessionals>>> = ({ signal }) => getAdminProfessionals({ signal, ...requestOptions });
 
 
 
@@ -2540,11 +2595,11 @@ export type GetAdminProfessionalsQueryError = ErrorType<unknown>
  */
 
 export function useGetAdminProfessionals<TData = Awaited<ReturnType<typeof getAdminProfessionals>>, TError = ErrorType<unknown>>(
- params?: GetAdminProfessionalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProfessionals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProfessionals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetAdminProfessionalsQueryOptions(params,options)
+  const queryOptions = getGetAdminProfessionalsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2566,9 +2621,9 @@ export const getUpdateProfessionalStatusUrl = (professionalId: number,) => {
 }
 
 export const updateProfessionalStatus = async (professionalId: number,
-    professionalStatusUpdate: ProfessionalStatusUpdate, options?: RequestInit): Promise<ProfessionalAdmin> => {
+    professionalStatusUpdate: ProfessionalStatusUpdate, options?: RequestInit): Promise<void> => {
 
-  return customFetch<ProfessionalAdmin>(getUpdateProfessionalStatusUrl(professionalId),
+  return customFetch<void>(getUpdateProfessionalStatusUrl(professionalId),
   {
     ...options,
     method: 'PATCH',
@@ -2632,9 +2687,9 @@ export const getUpdateProfessionalPlanUrl = (professionalId: number,) => {
 }
 
 export const updateProfessionalPlan = async (professionalId: number,
-    professionalPlanUpdate: ProfessionalPlanUpdate, options?: RequestInit): Promise<ProfessionalAdmin> => {
+    professionalPlanUpdate: ProfessionalPlanUpdate, options?: RequestInit): Promise<void> => {
 
-  return customFetch<ProfessionalAdmin>(getUpdateProfessionalPlanUrl(professionalId),
+  return customFetch<void>(getUpdateProfessionalPlanUrl(professionalId),
   {
     ...options,
     method: 'PATCH',
@@ -2698,7 +2753,7 @@ export const getGetPublicProfileUrl = (slug: string,) => {
 }
 
 /**
- * @summary Get public professional profile for booking
+ * @summary Get public booking profile
  */
 export const getPublicProfile = async (slug: string, options?: RequestInit): Promise<PublicProfile> => {
 
@@ -2745,7 +2800,7 @@ export type GetPublicProfileQueryError = ErrorType<void>
 
 
 /**
- * @summary Get public professional profile for booking
+ * @summary Get public booking profile
  */
 
 export function useGetPublicProfile<TData = Awaited<ReturnType<typeof getPublicProfile>>, TError = ErrorType<void>>(
@@ -2783,7 +2838,7 @@ export const getGetAvailableSlotsUrl = (slug: string,
 }
 
 /**
- * @summary Get available time slots for a date
+ * @summary Get available slots for a professional on a given date
  */
 export const getAvailableSlots = async (slug: string,
     params: GetAvailableSlotsParams, options?: RequestInit): Promise<TimeSlot[]> => {
@@ -2833,7 +2888,7 @@ export type GetAvailableSlotsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get available time slots for a date
+ * @summary Get available slots for a professional on a given date
  */
 
 export function useGetAvailableSlots<TData = Awaited<ReturnType<typeof getAvailableSlots>>, TError = ErrorType<unknown>>(
@@ -2867,9 +2922,9 @@ export const getCreateBookingUrl = (slug: string,) => {
  * @summary Create a public booking
  */
 export const createBooking = async (slug: string,
-    bookingInput: BookingInput, options?: RequestInit): Promise<Appointment> => {
+    bookingInput: BookingInput, options?: RequestInit): Promise<BookingResult> => {
 
-  return customFetch<Appointment>(getCreateBookingUrl(slug),
+  return customFetch<BookingResult>(getCreateBookingUrl(slug),
   {
     ...options,
     method: 'POST',

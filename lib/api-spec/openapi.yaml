@@ -144,6 +144,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/Professional"
 
+  /professionals/me/mp-connect/status:
+    get:
+      operationId: getMpConnectStatus
+      tags: [professionals]
+      summary: Get Mercado Pago connection status for professional
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MpConnectStatus"
+
+  /professionals/me/mp-connect/url:
+    get:
+      operationId: getMpConnectUrl
+      tags: [professionals]
+      summary: Get MP OAuth authorization URL
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MpConnectUrlResponse"
+
+  /professionals/me/mp-connect:
+    delete:
+      operationId: disconnectMpConnect
+      tags: [professionals]
+      summary: Disconnect professional's Mercado Pago account
+      responses:
+        "200":
+          description: OK
+
   /professionals/{professionalId}:
     get:
       operationId: getProfessional
@@ -195,6 +230,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Service"
+        "403":
+          description: Plan limit reached
 
   /services/{serviceId}:
     patch:
@@ -238,7 +275,7 @@ paths:
     get:
       operationId: getMyAvailability
       tags: [availability]
-      summary: Get professional's schedule
+      summary: Get professional's availability slots
       responses:
         "200":
           description: OK
@@ -252,7 +289,7 @@ paths:
     post:
       operationId: createAvailabilitySlot
       tags: [availability]
-      summary: Add a working schedule slot
+      summary: Add an availability slot
       requestBody:
         required: true
         content:
@@ -314,19 +351,19 @@ paths:
         - name: date
           in: query
           schema:
-            type: ["string", "null"]
+            type: string
         - name: status
           in: query
           schema:
-            type: ["string", "null"]
+            type: string
         - name: startDate
           in: query
           schema:
-            type: ["string", "null"]
+            type: string
         - name: endDate
           in: query
           schema:
-            type: ["string", "null"]
+            type: string
       responses:
         "200":
           description: OK
@@ -379,7 +416,7 @@ paths:
                 $ref: "#/components/schemas/Appointment"
 
     delete:
-      operationId: cancelAppointment
+      operationId: deleteAppointment
       tags: [appointments]
       parameters:
         - name: appointmentId
@@ -389,19 +426,14 @@ paths:
             type: integer
       responses:
         "204":
-          description: Cancelled
+          description: Deleted
 
   # CLIENTS
   /clients:
     get:
       operationId: getMyClients
       tags: [clients]
-      summary: Get professional's client list
-      parameters:
-        - name: search
-          in: query
-          schema:
-            type: ["string", "null"]
+      summary: Get professional's clients
       responses:
         "200":
           description: OK
@@ -450,7 +482,7 @@ paths:
     get:
       operationId: getMySubscription
       tags: [subscriptions]
-      summary: Get current subscription
+      summary: Get current professional's subscription
       responses:
         "200":
           description: OK
@@ -462,6 +494,7 @@ paths:
     post:
       operationId: createSubscription
       tags: [subscriptions]
+      summary: Create or update subscription (internal/admin)
       requestBody:
         required: true
         content:
@@ -480,7 +513,7 @@ paths:
     post:
       operationId: cancelSubscription
       tags: [subscriptions]
-      summary: Cancel current subscription
+      summary: Cancel subscription at period end
       responses:
         "200":
           description: OK
@@ -493,7 +526,7 @@ paths:
     post:
       operationId: createMpCheckout
       tags: [subscriptions]
-      summary: Create a Mercado Pago subscription checkout URL
+      summary: Create Mercado Pago preapproval checkout for subscription
       requestBody:
         required: true
         content:
@@ -510,9 +543,9 @@ paths:
 
   /subscriptions/mp/webhook:
     post:
-      operationId: mpWebhook
+      operationId: mpSubscriptionWebhook
       tags: [subscriptions]
-      summary: Mercado Pago payment webhook (public)
+      summary: Mercado Pago webhook for subscription events
       responses:
         "200":
           description: OK
@@ -531,46 +564,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
-  /dashboard/upcoming:
-    get:
-      operationId: getUpcomingAppointments
-      tags: [dashboard]
-      summary: Get next upcoming appointments
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: ["integer", "null"]
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Appointment"
-
-  /dashboard/recent-clients:
-    get:
-      operationId: getRecentClients
-      tags: [dashboard]
-      summary: Get recently active clients
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Client"
-
   /dashboard/appointments-by-day:
     get:
       operationId: getAppointmentsByDay
       tags: [dashboard]
-      summary: Appointments grouped by day for the current week
+      summary: Appointments count by day (last 7 days)
       responses:
         "200":
           description: OK
@@ -586,7 +584,7 @@ paths:
     get:
       operationId: getAdminStats
       tags: [admin]
-      summary: Global platform stats (super admin only)
+      summary: Get platform-level stats (super admin only)
       responses:
         "200":
           description: OK
@@ -600,15 +598,6 @@ paths:
       operationId: getAdminProfessionals
       tags: [admin]
       summary: List all professionals (super admin only)
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: ["string", "null"]
-        - name: search
-          in: query
-          schema:
-            type: ["string", "null"]
       responses:
         "200":
           description: OK
@@ -638,10 +627,6 @@ paths:
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProfessionalAdmin"
 
   /admin/professionals/{professionalId}/plan:
     patch:
@@ -662,17 +647,13 @@ paths:
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProfessionalAdmin"
 
   # PUBLIC BOOKING
   /booking/{slug}:
     get:
       operationId: getPublicProfile
       tags: [booking]
-      summary: Get public professional profile for booking
+      summary: Get public booking profile
       parameters:
         - name: slug
           in: path
@@ -693,7 +674,7 @@ paths:
     get:
       operationId: getAvailableSlots
       tags: [booking]
-      summary: Get available time slots for a date
+      summary: Get available slots for a professional on a given date
       parameters:
         - name: slug
           in: path
@@ -743,7 +724,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Appointment"
+                $ref: "#/components/schemas/BookingResult"
         "409":
           description: Slot no longer available
 
@@ -845,6 +826,12 @@ components:
           type: ["string", "null"]
         trialEndsAt:
           type: ["string", "null"]
+        paymentMode:
+          type: string
+        depositPercent:
+          type: integer
+        mpUserId:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -871,6 +858,10 @@ components:
           type: string
         websiteUrl:
           type: string
+        paymentMode:
+          type: string
+        depositPercent:
+          type: integer
 
     ProfessionalAdmin:
       type: object
@@ -912,6 +903,22 @@ components:
         plan:
           type: string
           enum: [basico, profesional, premium]
+
+    MpConnectStatus:
+      type: object
+      required: [connected]
+      properties:
+        connected:
+          type: boolean
+        mpUserId:
+          type: ["string", "null"]
+
+    MpConnectUrlResponse:
+      type: object
+      required: [authUrl]
+      properties:
+        authUrl:
+          type: string
 
     # SERVICES
     Service:
@@ -1047,6 +1054,16 @@ components:
           enum: [pending, confirmed, cancelled, completed, rescheduled]
         notes:
           type: ["string", "null"]
+        paymentStatus:
+          type: ["string", "null"]
+        paymentId:
+          type: ["string", "null"]
+        paymentAmount:
+          type: ["number", "null"]
+        paymentDate:
+          type: ["string", "null"]
+        paymentMode:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -1063,6 +1080,10 @@ components:
           type: string
           enum: [pending, confirmed, cancelled, completed, rescheduled]
         notes:
+          type: string
+        paymentStatus:
+          type: string
+        paymentMode:
           type: string
 
     # CLIENTS
@@ -1153,6 +1174,8 @@ components:
           type: string
         cancelAtPeriodEnd:
           type: boolean
+        mpPreapprovalId:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -1231,7 +1254,7 @@ components:
     # PUBLIC BOOKING
     PublicProfile:
       type: object
-      required: [id, name, profession, slug, services]
+      required: [id, name, profession, slug, services, paymentMode, depositPercent]
       properties:
         id:
           type: integer
@@ -1259,6 +1282,10 @@ components:
           type: ["string", "null"]
         websiteUrl:
           type: ["string", "null"]
+        paymentMode:
+          type: string
+        depositPercent:
+          type: integer
         services:
           type: array
           items:
@@ -1293,3 +1320,44 @@ components:
           type: string
         notes:
           type: string
+
+    BookingResult:
+      type: object
+      required: [id, professionalId, serviceId, clientName, clientEmail, date, startTime, endTime, status, createdAt]
+      properties:
+        id:
+          type: integer
+        professionalId:
+          type: integer
+        serviceId:
+          type: integer
+        serviceName:
+          type: string
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        paymentStatus:
+          type: ["string", "null"]
+        paymentMode:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        waUrl:
+          type: ["string", "null"]
+        paymentUrl:
+          type: ["string", "null"]

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { servicesTable, professionalsTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { CreateServiceBody, UpdateServiceBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { getActivePlanSlug, getPlanLimits } from "../lib/plans";
 
 const router = Router();
 
@@ -34,6 +35,26 @@ router.post("/", requireAuth, async (req, res) => {
 
   const prof = await getProfessionalForUser(req.session.userId!);
   if (!prof) { res.status(404).json({ error: "Professional not found" }); return; }
+
+  // ── Plan limit check ──
+  const planSlug = await getActivePlanSlug(prof.id);
+  const limits = getPlanLimits(planSlug);
+
+  if (limits.maxServices !== null) {
+    const [result] = await db
+      .select({ count: count() })
+      .from(servicesTable)
+      .where(and(eq(servicesTable.professionalId, prof.id), eq(servicesTable.isActive, true)));
+
+    const current = Number(result?.count ?? 0);
+    if (current >= limits.maxServices) {
+      res.status(403).json({
+        error: `Tu plan ${limits.name} permite hasta ${limits.maxServices} servicio${limits.maxServices !== 1 ? "s" : ""}. Actualizá tu plan para agregar más.`,
+        code: "PLAN_LIMIT_REACHED",
+      });
+      return;
+    }
+  }
 
   const [service] = await db.insert(servicesTable).values({
     ...parsed.data,

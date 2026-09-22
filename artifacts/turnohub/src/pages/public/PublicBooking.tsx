@@ -83,6 +83,11 @@ export default function PublicBooking() {
       onSuccess: (data) => {
         const d = data as unknown as { waUrl?: string };
         if (d?.waUrl) setWaUrl(d.waUrl);
+        const paymentUrl = (data as unknown as { paymentUrl?: string | null })?.paymentUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+          return;
+        }
         setStep("success");
       },
       onError: (err: unknown) => {

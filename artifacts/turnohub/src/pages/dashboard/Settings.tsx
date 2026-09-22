@@ -1,4 +1,11 @@
-import { useGetMyProfessionalProfile, useUpdateMyProfessionalProfile, getGetMyProfessionalProfileQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMyProfessionalProfile,
+  useUpdateMyProfessionalProfile,
+  getGetMyProfessionalProfileQueryKey,
+  useGetMpConnectStatus,
+  useDisconnectMpConnect,
+  getMpConnectUrl,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -7,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, ExternalLink, Check } from "lucide-react";
+import { Copy, ExternalLink, Check, CreditCard, Link2Off, Loader2 } from "lucide-react";
 
 export default function Settings() {
   const { data: profile, isLoading } = useGetMyProfessionalProfile();
   const updateMutation = useUpdateMyProfessionalProfile();
+  const { data: mpStatus, refetch: refetchMpStatus } = useGetMpConnectStatus();
+  const disconnectMpMutation = useDisconnectMpConnect();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -24,6 +33,8 @@ export default function Settings() {
     city: "",
     address: "",
     instagramUrl: "",
+    paymentMode: "none",
+    depositPercent: 30,
   });
 
   useEffect(() => {
@@ -36,6 +47,8 @@ export default function Settings() {
         city: profile.city || "",
         address: profile.address || "",
         instagramUrl: profile.instagramUrl || "",
+        paymentMode: profile.paymentMode || "none",
+        depositPercent: profile.depositPercent || 30,
       });
     }
   }, [profile]);
@@ -57,6 +70,31 @@ export default function Settings() {
         queryClient.invalidateQueries({ queryKey: getGetMyProfessionalProfileQueryKey() });
       },
       onError: () => toast({ title: "Error al guardar", variant: "destructive" })
+    });
+  };
+
+  const handleConnectMp = async () => {
+    try {
+      const result = await getMpConnectUrl();
+      window.location.href = result.authUrl;
+    } catch {
+      toast({
+        title: "Mercado Pago no está disponible",
+        description: "La conexión todavía no está configurada por el administrador.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisconnectMp = () => {
+    if (!confirm("¿Querés desconectar tu cuenta de Mercado Pago? Se desactivará el cobro online.")) return;
+    disconnectMpMutation.mutate(undefined, {
+      onSuccess: () => {
+        refetchMpStatus();
+        setFormData(current => ({ ...current, paymentMode: "none" }));
+        toast({ title: "Cuenta de Mercado Pago desconectada" });
+      },
+      onError: () => toast({ title: "No se pudo desconectar Mercado Pago", variant: "destructive" }),
     });
   };
 
@@ -96,6 +134,78 @@ export default function Settings() {
                 Ver
               </a>
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" /> Pagos de reservas
+          </CardTitle>
+          <CardDescription>
+            Conectá tu propia cuenta de Mercado Pago para cobrar directamente a tus clientes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className={`rounded-xl border p-4 flex items-center justify-between gap-3 ${mpStatus?.connected ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+            <div>
+              <p className="font-semibold text-sm">
+                {mpStatus?.connected ? "Cuenta de Mercado Pago conectada" : "Cuenta de Mercado Pago no conectada"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {mpStatus?.connected
+                  ? `ID de cuenta: ${mpStatus.mpUserId || "conectada"}`
+                  : "Necesitás conectarla para habilitar seña o pago completo online."}
+              </p>
+            </div>
+            {mpStatus?.connected ? (
+              <Button type="button" size="sm" variant="outline" onClick={handleDisconnectMp} disabled={disconnectMpMutation.isPending} className="gap-1.5 shrink-0">
+                {disconnectMpMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
+                Desconectar
+              </Button>
+            ) : (
+              <Button type="button" size="sm" onClick={handleConnectMp} className="gap-1.5 shrink-0">
+                <CreditCard className="h-3.5 w-3.5" /> Conectar Mercado Pago
+              </Button>
+            )}
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentMode">Cómo cobrar reservas</Label>
+              <select
+                id="paymentMode"
+                value={formData.paymentMode}
+                onChange={e => setFormData({ ...formData, paymentMode: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="none">Sin pago online</option>
+                <option value="in_person">Pago presencial</option>
+                <option value="deposit">Seña online</option>
+                <option value="full">Pago completo online</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                La seña y el pago completo requieren una cuenta conectada.
+              </p>
+            </div>
+            {formData.paymentMode === "deposit" && (
+              <div className="space-y-2">
+                <Label htmlFor="depositPercent">Porcentaje de seña</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="depositPercent"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.depositPercent}
+                    onChange={e => setFormData({ ...formData, depositPercent: Number(e.target.value) })}
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Se calcula sobre el precio del servicio.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
