@@ -13,6 +13,13 @@ const app: Express = express();
 const PgSession = ConnectPgSimple(session);
 
 const isProduction = process.env.NODE_ENV === "production";
+if (isProduction && !process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET must be configured in production.");
+}
+
+// HTTPS terminates at Replit's proxy; this is required for secure session
+// cookies to survive authentication redirects such as Mercado Pago OAuth.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, pgEnum, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -28,6 +28,7 @@ export const professionalsTable = pgTable("professionals", {
   // Payment configuration
   paymentMode: text("payment_mode").notNull().default("none"),  // none | full | deposit | in_person
   depositPercent: integer("deposit_percent").notNull().default(30),
+  depositAmount: numeric("deposit_amount", { precision: 10, scale: 2 }),
   // MP Connect (professional's own account)
   mpAccessToken: text("mp_access_token"),
   mpRefreshToken: text("mp_refresh_token"),

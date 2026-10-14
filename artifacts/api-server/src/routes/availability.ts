@@ -4,8 +4,10 @@ import { availabilitySlotsTable, professionalsTable, usersTable } from "@workspa
 import { eq, and } from "drizzle-orm";
 import { CreateAvailabilitySlotBody, UpdateAvailabilitySlotBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { requireSubscriptionAccess } from "../middlewares/subscription-access";
 
 const router = Router();
+router.use(requireSubscriptionAccess);
 
 async function getProfessionalForUser(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);

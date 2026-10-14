@@ -5,15 +5,11 @@ import { eq } from "drizzle-orm";
 import { UpdateMyProfessionalProfileBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
 import crypto from "crypto";
+import { getPublicAppUrl } from "../lib/app-url";
 
 const router = Router();
 
 const MP_API = "https://api.mercadopago.com";
-
-function getBaseUrl(): string {
-  const domains = (process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || "localhost:80").split(",")[0];
-  return `https://${domains}`;
-}
 
 async function getProfForUser(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
@@ -32,7 +28,11 @@ router.get("/me", requireAuth, async (req, res) => {
 
   // Strip sensitive OAuth tokens from response
   const { mpAccessToken, mpRefreshToken, googleAccessToken, googleRefreshToken, ...safe } = professional;
-  res.json({ ...safe, mpUserId: professional.mpUserId ?? null });
+  res.json({
+    ...safe,
+    depositAmount: professional.depositAmount === null ? null : Number(professional.depositAmount),
+    mpUserId: professional.mpUserId ?? null,
+  });
 });
 
 // ── PATCH /me ─────────────────────────────────────────────────────────────────
@@ -62,6 +62,14 @@ router.patch("/me", requireAuth, async (req, res) => {
     if (pct < 1 || pct > 100) { res.status(400).json({ error: "depositPercent debe estar entre 1 y 100" }); return; }
     updateData.depositPercent = pct;
   }
+  if (parsed.data.depositAmount !== undefined) {
+    const amount = parsed.data.depositAmount === null ? null : Number(parsed.data.depositAmount);
+    if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) {
+      res.status(400).json({ error: "depositAmount debe ser mayor que cero." });
+      return;
+    }
+    updateData.depositAmount = amount === null ? null : String(amount);
+  }
 
   const [updated] = await db.update(professionalsTable)
     .set(updateData)
@@ -69,7 +77,11 @@ router.patch("/me", requireAuth, async (req, res) => {
     .returning();
 
   const { mpAccessToken, mpRefreshToken, googleAccessToken, googleRefreshToken, ...safe } = updated;
-  res.json({ ...safe, mpUserId: updated.mpUserId ?? null });
+  res.json({
+    ...safe,
+    depositAmount: updated.depositAmount === null ? null : Number(updated.depositAmount),
+    mpUserId: updated.mpUserId ?? null,
+  });
 });
 
 // ── MP Connect: GET /me/mp-connect/status ────────────────────────────────────
@@ -94,13 +106,19 @@ router.get("/me/mp-connect/url", requireAuth, async (req, res) => {
   const prof = await getProfForUser(req.session.userId!);
   if (!prof) { res.status(404).json({ error: "Not found" }); return; }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getPublicAppUrl();
+  if (!baseUrl) {
+    res.status(503).json({ error: "La URL pública HTTPS de TurnoHub no está configurada." });
+    return;
+  }
   const redirectUri = `${baseUrl}/api/professionals/me/mp-connect/callback`;
-  const state = crypto.createHash("sha256").update(`${prof.id}:${Date.now()}:${process.env.SESSION_SECRET || "secret"}`).digest("hex").substring(0, 32);
+  const state = crypto.randomBytes(32).toString("hex");
 
-  // Store state in session for CSRF validation
-  (req.session as unknown as Record<string, unknown>).mpOAuthState = state;
-  (req.session as unknown as Record<string, unknown>).mpOAuthProfId = prof.id;
+  // Store a single-use state value in the signed server-side session.
+  const sessionData = req.session as unknown as Record<string, unknown>;
+  sessionData.mpOAuthState = state;
+  sessionData.mpOAuthProfId = prof.id;
+  sessionData.mpOAuthCreatedAt = Date.now();
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -118,8 +136,34 @@ router.get("/me/mp-connect/url", requireAuth, async (req, res) => {
 // This is a redirect handler — browser lands here after MP OAuth
 router.get("/me/mp-connect/callback", requireAuth, async (req, res) => {
   const { code, state, error } = req.query as { code?: string; state?: string; error?: string };
-  const baseUrl = getBaseUrl();
-  const frontendBase = baseUrl.replace("/api", "");
+  const baseUrl = getPublicAppUrl();
+  if (!baseUrl) {
+    res.status(503).send("La URL pública de TurnoHub no está configurada.");
+    return;
+  }
+  const frontendBase = baseUrl;
+  const sessionData = req.session as unknown as Record<string, unknown>;
+  const expectedState = sessionData.mpOAuthState;
+  const expectedProfId = sessionData.mpOAuthProfId;
+  const createdAt = Number(sessionData.mpOAuthCreatedAt || 0);
+  // Consume the state before making any outbound request: one attempt only.
+  delete sessionData.mpOAuthState;
+  delete sessionData.mpOAuthProfId;
+  delete sessionData.mpOAuthCreatedAt;
+
+  const prof = await getProfForUser(req.session.userId!);
+  if (
+    typeof state !== "string" ||
+    typeof expectedState !== "string" ||
+    state !== expectedState ||
+    !prof ||
+    Number(expectedProfId) !== prof.id ||
+    !createdAt ||
+    Date.now() - createdAt > 10 * 60 * 1000
+  ) {
+    res.redirect(`${frontendBase}/configuracion?mp_error=state`);
+    return;
+  }
 
   if (error) {
     console.error("[MP Connect] OAuth error:", error);
@@ -136,12 +180,6 @@ router.get("/me/mp-connect/callback", requireAuth, async (req, res) => {
   }
 
   if (!code) {
-    res.redirect(`${frontendBase}/configuracion?mp_error=1`);
-    return;
-  }
-
-  const prof = await getProfForUser(req.session.userId!);
-  if (!prof) {
     res.redirect(`${frontendBase}/configuracion?mp_error=1`);
     return;
   }

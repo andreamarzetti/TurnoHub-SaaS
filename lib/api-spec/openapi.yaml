@@ -701,6 +701,37 @@ paths:
                 items:
                   $ref: "#/components/schemas/TimeSlot"
 
+  /booking/{slug}/payment-status/{appointmentId}:
+    get:
+      operationId: getBookingPaymentStatus
+      tags: [booking]
+      summary: Get the payment status for a public booking
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current booking and payment status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingPaymentStatus"
+        "404":
+          description: Booking not found
+
   /booking/{slug}/book:
     post:
       operationId: createBooking
@@ -830,6 +861,8 @@ components:
           type: string
         depositPercent:
           type: integer
+        depositAmount:
+          type: ["number", "null"]
         mpUserId:
           type: ["string", "null"]
         createdAt:
@@ -862,6 +895,8 @@ components:
           type: string
         depositPercent:
           type: integer
+        depositAmount:
+          type: ["number", "null"]
 
     ProfessionalAdmin:
       type: object
@@ -1286,6 +1321,8 @@ components:
           type: string
         depositPercent:
           type: integer
+        depositAmount:
+          type: ["number", "null"]
         services:
           type: array
           items:
@@ -1301,6 +1338,17 @@ components:
           type: string
         available:
           type: boolean
+
+    BookingPaymentStatus:
+      type: object
+      required: [status, paymentStatus]
+      properties:
+        status:
+          type: string
+        paymentStatus:
+          type: ["string", "null"]
+        paymentAmount:
+          type: ["number", "null"]
 
     BookingInput:
       type: object

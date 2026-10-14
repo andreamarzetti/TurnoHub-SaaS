@@ -5,7 +5,10 @@ const RESEND_URL = "https://api.resend.com/emails";
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return; // fail silently — email is non-critical
+  if (!apiKey) {
+    console.warn("[email] skipped: RESEND_API_KEY is not configured.");
+    return;
+  }
   try {
     const res = await fetch(RESEND_URL, {
       method: "POST",
@@ -87,10 +90,11 @@ function fmtTime(t: string): string { return t.substring(0, 5); }
 // ─── Client: Booking Created ────────────────────────────────────────────────────
 
 export function emailBookingCreatedClient(data: AptEmailData): { subject: string; html: string } {
-  const subject = `✅ Turno confirmado con ${data.profName} — ${fmtDate(data.date)}`;
+  const awaitingPayment = data.paymentMode === "full" || data.paymentMode === "deposit";
+  const subject = `${awaitingPayment ? "💳 Pago pendiente" : "✅ Turno reservado"} — ${data.profName} — ${fmtDate(data.date)}`;
   const html = baseLayout(`
-    <h2 style="color:#111827;font-size:22px;font-weight:800;margin:0 0 8px;">¡Tu turno está confirmado!</h2>
-    <p style="color:#4b5563;font-size:15px;margin:0 0 20px;">Hola <strong>${data.clientName}</strong>, tu reserva fue registrada correctamente.</p>
+    <h2 style="color:#111827;font-size:22px;font-weight:800;margin:0 0 8px;">${awaitingPayment ? "Completá el pago para confirmar tu turno" : "¡Tu turno está reservado!"}</h2>
+    <p style="color:#4b5563;font-size:15px;margin:0 0 20px;">Hola <strong>${data.clientName}</strong>, ${awaitingPayment ? "tu horario está reservado temporalmente mientras completás el pago." : "tu reserva fue registrada correctamente."}</p>
     ${infoBlock([
       { label: "Profesional", value: data.profName },
       { label: "Servicio", value: data.serviceName },
@@ -103,7 +107,7 @@ export function emailBookingCreatedClient(data: AptEmailData): { subject: string
       : data.paymentMode === "in_person"
       ? `<p style="color:#4b5563;font-size:14px;">El pago se abona de forma presencial al momento del turno.</p>`
       : data.paymentAmount
-      ? `<p style="color:#4b5563;font-size:14px;">✅ Seña recibida: <strong>$${data.paymentAmount.toLocaleString("es-AR")}</strong></p>`
+      ? `<p style="color:#4b5563;font-size:14px;">${awaitingPayment ? "Importe a pagar para confirmar" : "Importe"}: <strong>$${data.paymentAmount.toLocaleString("es-AR")} ARS</strong></p>`
       : ""}
     ${data.profPhone ? `<p style="color:#4b5563;font-size:14px;margin-top:16px;">📞 Contacto: <strong>${data.profPhone}</strong></p>` : ""}
     <p style="color:#6b7280;font-size:13px;margin-top:20px;">Si necesitás cancelar o modificar el turno, contactá directamente al profesional.</p>
@@ -114,10 +118,11 @@ export function emailBookingCreatedClient(data: AptEmailData): { subject: string
 // ─── Professional: Booking Created ─────────────────────────────────────────────
 
 export function emailBookingCreatedProf(data: AptEmailData): { subject: string; html: string } {
-  const subject = `📅 Nuevo turno: ${data.clientName} — ${fmtDate(data.date)}`;
+  const awaitingPayment = data.paymentMode === "full" || data.paymentMode === "deposit";
+  const subject = `${awaitingPayment ? "💳 Reserva pendiente de pago" : "📅 Nuevo turno"}: ${data.clientName} — ${fmtDate(data.date)}`;
   const html = baseLayout(`
-    <h2 style="color:#111827;font-size:22px;font-weight:800;margin:0 0 8px;">Nuevo turno reservado</h2>
-    <p style="color:#4b5563;font-size:15px;margin:0 0 20px;">Tienes una nueva reserva a través de TurnoHub.</p>
+    <h2 style="color:#111827;font-size:22px;font-weight:800;margin:0 0 8px;">${awaitingPayment ? "Nueva reserva pendiente de pago" : "Nuevo turno reservado"}</h2>
+    <p style="color:#4b5563;font-size:15px;margin:0 0 20px;">${awaitingPayment ? "El horario se confirmará automáticamente cuando Mercado Pago apruebe el pago." : "Tienes una nueva reserva a través de TurnoHub."}</p>
     ${infoBlock([
       { label: "Cliente", value: data.clientName },
       { label: "Email cliente", value: data.clientEmail },

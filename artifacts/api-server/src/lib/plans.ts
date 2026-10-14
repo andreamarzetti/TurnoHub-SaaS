@@ -1,7 +1,7 @@
 /** Plan limits enforcement for TurnoHub */
 
 import { db } from "@workspace/db";
-import { servicesTable, appointmentsTable, subscriptionsTable } from "@workspace/db";
+import { servicesTable, appointmentsTable, subscriptionsTable, professionalsTable } from "@workspace/db";
 import { eq, and, gte, lte, count } from "drizzle-orm";
 
 export interface PlanLimits {
@@ -19,6 +19,26 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 
 export function getPlanLimits(planSlug: string | null): PlanLimits {
   return PLAN_LIMITS[planSlug ?? "trial"] ?? PLAN_LIMITS["trial"];
+}
+
+export async function refreshSubscriptionAccess(professionalId: number): Promise<boolean> {
+  const [sub] = await db.select().from(subscriptionsTable)
+    .where(eq(subscriptionsTable.professionalId, professionalId))
+    .limit(1);
+  if (!sub) return false;
+
+  const now = new Date();
+  if ((sub.status === "trial" || sub.status === "active") && sub.currentPeriodEnd <= now) {
+    await db.update(subscriptionsTable)
+      .set({ status: sub.cancelAtPeriodEnd ? "cancelled" : "past_due", updatedAt: now })
+      .where(eq(subscriptionsTable.id, sub.id));
+    await db.update(professionalsTable)
+      .set({ status: "suspended", updatedAt: now })
+      .where(eq(professionalsTable.id, professionalId));
+    return false;
+  }
+
+  return sub.status === "trial" || sub.status === "active";
 }
 
 export async function getActivePlanSlug(professionalId: number): Promise<string> {

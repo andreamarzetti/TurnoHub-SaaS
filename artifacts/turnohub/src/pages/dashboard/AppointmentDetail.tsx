@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, Calendar, Clock, Scissors, FileText, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Scissors, FileText, CheckCircle2, XCircle, CreditCard } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +21,13 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 border-amber-200",
   cancelled: "bg-red-100 text-red-700 border-red-200",
   completed: "bg-blue-100 text-blue-700 border-blue-200",
+};
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  paid: "Pagado",
+  failed: "Fallido",
+  waived: "Presencial / sin pago online",
 };
 
 export default function AppointmentDetail() {
@@ -149,7 +156,10 @@ export default function AppointmentDetail() {
         {apt.status !== "cancelled" && apt.status !== "completed" && (
           <CardFooter className="border-t p-5 bg-muted/10 flex flex-wrap gap-3">
             {apt.status === "pending" && (
-              <Button onClick={() => handleStatusUpdate("confirmed")} disabled={updateMutation.isPending}>
+              <Button
+                onClick={() => handleStatusUpdate("confirmed")}
+                disabled={updateMutation.isPending || ((apt.paymentMode === "full" || apt.paymentMode === "deposit") && apt.paymentStatus !== "paid")}
+              >
                 <CheckCircle2 className="mr-2 h-4 w-4" /> Confirmar turno
               </Button>
             )}
@@ -164,6 +174,44 @@ export default function AppointmentDetail() {
           </CardFooter>
         )}
       </Card>
+      {apt.paymentMode && apt.paymentMode !== "none" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CreditCard className="h-4 w-4 text-primary" /> Pago de la reserva
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Estado</span>
+              <span className="font-medium">{PAYMENT_STATUS_LABELS[apt.paymentStatus ?? ""] ?? "Sin registrar"}</span>
+            </div>
+            {apt.paymentAmount != null && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Importe registrado</span>
+                <span className="font-medium">${Number(apt.paymentAmount).toLocaleString("es-AR")} ARS</span>
+              </div>
+            )}
+            {apt.paymentDate && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Fecha de pago</span>
+                <span className="font-medium">{format(new Date(apt.paymentDate), "d/MM/yyyy HH:mm")}</span>
+              </div>
+            )}
+            {apt.paymentStatus === "paid" && apt.paymentId && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">ID Mercado Pago</span>
+                <span className="font-mono text-xs">{apt.paymentId}</span>
+              </div>
+            )}
+            {(apt.paymentMode === "full" || apt.paymentMode === "deposit") && apt.paymentStatus !== "paid" && (
+              <p className="border-t pt-3 text-xs text-muted-foreground">
+                Este turno no se confirma hasta que Mercado Pago informe un pago aprobado.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

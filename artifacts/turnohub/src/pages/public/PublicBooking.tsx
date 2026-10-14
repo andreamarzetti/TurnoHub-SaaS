@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "wouter";
-import { useGetPublicProfile, useGetAvailableSlots, useCreateBooking, getGetPublicProfileQueryKey, getGetAvailableSlotsQueryKey } from "@workspace/api-client-react";
+import { useGetPublicProfile, useGetAvailableSlots, useCreateBooking, useGetBookingPaymentStatus, getGetPublicProfileQueryKey, getGetAvailableSlotsQueryKey, getGetBookingPaymentStatusQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,20 @@ export default function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
   const profileQk = getGetPublicProfileQueryKey(slug as string);
   const { data: profile, isLoading } = useGetPublicProfile(slug as string, { query: { enabled: !!slug, queryKey: profileQk } });
+  const checkoutParams = new URLSearchParams(window.location.search);
+  const checkoutAppointmentId = Number(checkoutParams.get("apt") || 0);
+  const checkoutToken = checkoutParams.get("token") || "";
+  const checkoutReturn = checkoutParams.get("paid") === "1" || checkoutParams.get("error") === "pago";
+  const paymentStatusQuery = useGetBookingPaymentStatus(slug || "", checkoutAppointmentId, { token: checkoutToken }, {
+    query: {
+      queryKey: getGetBookingPaymentStatusQueryKey(slug || "", checkoutAppointmentId, { token: checkoutToken }),
+      enabled: !!slug && checkoutReturn && !!checkoutToken && Number.isSafeInteger(checkoutAppointmentId) && checkoutAppointmentId > 0,
+      refetchInterval: query =>
+        query.state.data?.paymentStatus === "paid" || query.state.data?.paymentStatus === "failed"
+          ? false
+          : 2500,
+    },
+  });
 
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<number | null>(null);
@@ -63,6 +77,49 @@ export default function PublicBooking() {
           </div>
           <h2 className="text-xl font-bold mb-2">Página no encontrada</h2>
           <p className="text-muted-foreground">Este profesional no existe o el link es incorrecto.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutReturn) {
+    const paymentStatus = paymentStatusQuery.data?.paymentStatus;
+    const paid = paymentStatus === "paid";
+    const failed = paymentStatus === "failed" || checkoutParams.get("error") === "pago" || !checkoutToken;
+
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-3xl border bg-white p-8 text-center shadow-sm">
+          <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${paid ? "bg-emerald-100" : failed ? "bg-red-100" : "bg-amber-100"}`}>
+            <CheckCircle2 className={`h-8 w-8 ${paid ? "text-emerald-600" : failed ? "text-red-500" : "text-amber-600"}`} />
+          </div>
+          <h1 className="mb-2 text-2xl font-bold">
+            {paid ? "¡Pago confirmado!" : failed ? "El pago no se completó" : "Verificando tu pago"}
+          </h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {paid
+              ? "Tu turno quedó confirmado. Te enviaremos el comprobante y los detalles por email."
+              : failed
+              ? "El turno no está confirmado. Volvé a reservar para elegir otro horario e intentar nuevamente."
+              : paymentStatusQuery.isError
+              ? "Todavía no pudimos consultar el estado. Esta página seguirá intentando actualizarlo."
+              : "Mercado Pago está procesando la confirmación. No cierres esta página; puede tardar unos segundos."}
+          </p>
+          {paid && paymentStatusQuery.data?.paymentAmount != null && (
+            <p className="mb-6 rounded-xl bg-slate-50 p-3 text-sm">
+              Importe acreditado: <strong>${Number(paymentStatusQuery.data.paymentAmount).toLocaleString("es-AR")} ARS</strong>
+            </p>
+          )}
+          <div className="flex flex-col gap-3">
+            {!paid && !failed && (
+              <Button variant="outline" onClick={() => paymentStatusQuery.refetch()} disabled={paymentStatusQuery.isFetching}>
+                {paymentStatusQuery.isFetching ? "Consultando..." : "Consultar estado"}
+              </Button>
+            )}
+            <Button asChild>
+              <a href={`/booking/${slug}`}>Volver a las reservas</a>
+            </Button>
+          </div>
         </div>
       </div>
     );

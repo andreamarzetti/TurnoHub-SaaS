@@ -3,8 +3,10 @@ import { db } from "@workspace/db";
 import { appointmentsTable, clientsTable, professionalsTable, usersTable } from "@workspace/db";
 import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireSubscriptionAccess } from "../middlewares/subscription-access";
 
 const router = Router();
+router.use(requireSubscriptionAccess);
 
 async function getProfessionalForUser(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);

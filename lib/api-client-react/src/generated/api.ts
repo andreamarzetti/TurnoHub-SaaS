@@ -29,11 +29,13 @@ import type {
   AvailabilitySlotInput,
   AvailabilitySlotUpdate,
   BookingInput,
+  BookingPaymentStatus,
   BookingResult,
   Client,
   ClientDetail,
   DashboardSummary,
   GetAvailableSlotsParams,
+  GetBookingPaymentStatusParams,
   GetMyAppointmentsParams,
   HealthStatus,
   LoginInput,
@@ -2898,6 +2900,100 @@ export function useGetAvailableSlots<TData = Awaited<ReturnType<typeof getAvaila
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAvailableSlotsQueryOptions(slug,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetBookingPaymentStatusUrl = (slug: string,
+    appointmentId: number,
+    params: GetBookingPaymentStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/booking/${slug}/payment-status/${appointmentId}?${stringifiedParams}` : `/api/booking/${slug}/payment-status/${appointmentId}`
+}
+
+/**
+ * @summary Get the payment status for a public booking
+ */
+export const getBookingPaymentStatus = async (slug: string,
+    appointmentId: number,
+    params: GetBookingPaymentStatusParams, options?: RequestInit): Promise<BookingPaymentStatus> => {
+
+  return customFetch<BookingPaymentStatus>(getGetBookingPaymentStatusUrl(slug,appointmentId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBookingPaymentStatusQueryKey = (slug: string,
+    appointmentId: number,
+    params?: GetBookingPaymentStatusParams,) => {
+    return [
+    `/api/booking/${slug}/payment-status/${appointmentId}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBookingPaymentStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBookingPaymentStatus>>, TError = ErrorType<void>>(slug: string,
+    appointmentId: number,
+    params: GetBookingPaymentStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookingPaymentStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBookingPaymentStatusQueryKey(slug,appointmentId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBookingPaymentStatus>>> = ({ signal }) => getBookingPaymentStatus(slug,appointmentId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug && appointmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBookingPaymentStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBookingPaymentStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getBookingPaymentStatus>>>
+export type GetBookingPaymentStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the payment status for a public booking
+ */
+
+export function useGetBookingPaymentStatus<TData = Awaited<ReturnType<typeof getBookingPaymentStatus>>, TError = ErrorType<void>>(
+ slug: string,
+    appointmentId: number,
+    params: GetBookingPaymentStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookingPaymentStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBookingPaymentStatusQueryOptions(slug,appointmentId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

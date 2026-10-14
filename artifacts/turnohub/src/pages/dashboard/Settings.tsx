@@ -35,6 +35,8 @@ export default function Settings() {
     instagramUrl: "",
     paymentMode: "none",
     depositPercent: 30,
+    depositType: "percent",
+    depositAmount: 0,
   });
 
   useEffect(() => {
@@ -49,9 +51,30 @@ export default function Settings() {
         instagramUrl: profile.instagramUrl || "",
         paymentMode: profile.paymentMode || "none",
         depositPercent: profile.depositPercent || 30,
+        depositType: profile.depositAmount == null ? "percent" : "fixed",
+        depositAmount: profile.depositAmount == null ? 0 : Number(profile.depositAmount),
       });
     }
   }, [profile]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("mp_connected") === "1";
+    const error = params.get("mp_error");
+    if (!connected && !error) return;
+
+    if (connected) {
+      toast({ title: "Cuenta de Mercado Pago conectada", description: "Los pagos de reservas se enviarán a tu cuenta." });
+      refetchMpStatus();
+    } else {
+      toast({ title: "No se pudo conectar Mercado Pago", description: "Revisá la configuración de TurnoHub y volvé a intentar.", variant: "destructive" });
+    }
+
+    params.delete("mp_connected");
+    params.delete("mp_error");
+    const query = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }, [refetchMpStatus, toast]);
 
   const bookingUrl = `${window.location.origin}/booking/${profile?.slug}`;
 
@@ -64,7 +87,15 @@ export default function Settings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate({ data: formData }, {
+    const { depositType, ...profileData } = formData;
+    updateMutation.mutate({
+      data: {
+        ...profileData,
+        depositAmount: formData.paymentMode === "deposit" && depositType === "fixed"
+          ? formData.depositAmount
+          : null,
+      },
+    }, {
       onSuccess: () => {
         toast({ title: "✅ Perfil actualizado", description: "Los cambios ya son visibles para tus clientes." });
         queryClient.invalidateQueries({ queryKey: getGetMyProfessionalProfileQueryKey() });
@@ -191,19 +222,46 @@ export default function Settings() {
             </div>
             {formData.paymentMode === "deposit" && (
               <div className="space-y-2">
-                <Label htmlFor="depositPercent">Porcentaje de seña</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="depositPercent"
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={formData.depositPercent}
-                    onChange={e => setFormData({ ...formData, depositPercent: Number(e.target.value) })}
-                  />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Se calcula sobre el precio del servicio.</p>
+                <Label htmlFor="depositType">Tipo de seña</Label>
+                <select
+                  id="depositType"
+                  value={formData.depositType}
+                  onChange={e => setFormData({ ...formData, depositType: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="percent">Porcentaje</option>
+                  <option value="fixed">Monto fijo</option>
+                </select>
+                {formData.depositType === "percent" ? (
+                  <>
+                    <Label htmlFor="depositPercent">Porcentaje de seña</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="depositPercent"
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={formData.depositPercent}
+                        onChange={e => setFormData({ ...formData, depositPercent: Number(e.target.value) })}
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Se calcula sobre el precio del servicio.</p>
+                  </>
+                ) : (
+                  <>
+                    <Label htmlFor="depositAmount">Monto fijo por reserva</Label>
+                    <Input
+                      id="depositAmount"
+                      type="number"
+                      min={1}
+                      step="0.01"
+                      value={formData.depositAmount}
+                      onChange={e => setFormData({ ...formData, depositAmount: Number(e.target.value) })}
+                    />
+                    <p className="text-xs text-muted-foreground">No puede superar el precio del servicio reservado.</p>
+                  </>
+                )}
               </div>
             )}
           </div>

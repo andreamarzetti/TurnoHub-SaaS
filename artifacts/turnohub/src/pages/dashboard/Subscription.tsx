@@ -90,12 +90,22 @@ export default function Subscription() {
       </div>
 
       {/* Success banner */}
-      {justPaid && (
+      {justPaid && sub?.status === "active" && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4">
           <ShieldCheck className="h-5 w-5 text-green-600 shrink-0" />
           <div>
-            <p className="font-semibold text-sm">¡Pago recibido!</p>
-            <p className="text-xs mt-0.5">Tu suscripción está siendo procesada. En unos minutos quedará activa.</p>
+            <p className="font-semibold text-sm">¡Suscripción activa!</p>
+            <p className="text-xs mt-0.5">Mercado Pago confirmó el pago y el plan ya está habilitado.</p>
+          </div>
+        </div>
+      )}
+
+      {justPaid && sub?.status !== "active" && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
+          <Clock className="h-5 w-5 text-amber-700 shrink-0" />
+          <div>
+            <p className="font-semibold text-sm">Pago en verificación</p>
+            <p className="text-xs mt-0.5">El plan se activará cuando Mercado Pago confirme el pago; todavía no lo marcamos como activo.</p>
           </div>
         </div>
       )}

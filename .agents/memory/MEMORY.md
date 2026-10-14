@@ -1,3 +1,4 @@
 - [Custom fetch export fix](custom-fetch-export.md) — `customFetch` must be exported from `lib/api-client-react/src/index.ts`, not imported via deep subpath `/src/custom-fetch`.
 - [Auth session flow](auth-session-flow.md) — Session-based auth with `credentials: "include"`, direct `customFetch` for login/register (not generated hooks), `SessionUser` type extends `User` with `professional` field.
 - [DB migration without drizzle push](db-migration-workaround.md) — Use `psql $DATABASE_URL -c "ALTER TABLE..."` directly when `drizzle-kit push` fails due to unmanaged tables (e.g. `user_sessions`).
+- [Payment account ownership](payment-account-ownership.md) — Subscription revenue goes to TurnoHub’s Mercado Pago account; booking payments go directly to each professional’s connected account.

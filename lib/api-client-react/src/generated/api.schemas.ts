@@ -84,6 +84,8 @@ export interface Professional {
   paymentMode?: string;
   depositPercent?: number;
   /** @nullable */
+  depositAmount?: number | null;
+  /** @nullable */
   mpUserId?: string | null;
   createdAt: string;
 }
@@ -101,6 +103,8 @@ export interface ProfessionalUpdate {
   websiteUrl?: string;
   paymentMode?: string;
   depositPercent?: number;
+  /** @nullable */
+  depositAmount?: number | null;
 }
 
 export interface ProfessionalAdmin {
@@ -398,6 +402,8 @@ export interface PublicProfile {
   websiteUrl?: string | null;
   paymentMode: string;
   depositPercent: number;
+  /** @nullable */
+  depositAmount?: number | null;
   services: Service[];
 }
 
@@ -405,6 +411,14 @@ export interface TimeSlot {
   startTime: string;
   endTime: string;
   available: boolean;
+}
+
+export interface BookingPaymentStatus {
+  status: string;
+  /** @nullable */
+  paymentStatus: string | null;
+  /** @nullable */
+  paymentAmount?: number | null;
 }
 
 export interface BookingInput {
@@ -455,5 +469,9 @@ endDate?: string;
 export type GetAvailableSlotsParams = {
 date: string;
 serviceId: number;
+};
+
+export type GetBookingPaymentStatusParams = {
+token: string;
 };
 

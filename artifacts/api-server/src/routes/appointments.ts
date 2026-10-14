@@ -4,6 +4,7 @@ import { appointmentsTable, professionalsTable, usersTable } from "@workspace/db
 import { eq, and, gte, lte } from "drizzle-orm";
 import { UpdateAppointmentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { requireSubscriptionAccess } from "../middlewares/subscription-access";
 import {
   sendEmail,
   emailBookingConfirmedClient,
@@ -12,6 +13,7 @@ import {
 } from "../lib/email";
 
 const router = Router();
+router.use(requireSubscriptionAccess);
 
 async function getProfessionalForUser(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
@@ -76,6 +78,15 @@ router.patch("/:appointmentId", requireAuth, async (req, res) => {
     .limit(1);
 
   if (!before) { res.status(404).json({ error: "Appointment not found" }); return; }
+
+  if (
+    parsed.data.status === "confirmed" &&
+    (before.paymentMode === "full" || before.paymentMode === "deposit") &&
+    before.paymentStatus !== "paid"
+  ) {
+    res.status(409).json({ error: "Este turno solo se confirma después de que Mercado Pago apruebe el pago." });
+    return;
+  }
 
   const [updated] = await db.update(appointmentsTable)
     .set({ ...parsed.data, updatedAt: new Date() })

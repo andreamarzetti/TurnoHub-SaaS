@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { db } from "@workspace/db";
 import { professionalsTable, servicesTable, availabilitySlotsTable, appointmentsTable, clientsTable } from "@workspace/db";
 import { eq, and, or } from "drizzle-orm";
@@ -10,13 +11,16 @@ import {
   emailPaymentReceivedClient,
   emailPaymentReceivedProf,
 } from "../lib/email";
+import { getPublicAppUrl } from "../lib/app-url";
+import { checkAppointmentLimit, refreshSubscriptionAccess } from "../lib/plans";
+import { professionalMpFetch } from "../lib/mercado-pago-professional";
 
 const router = Router();
 const MP_API = "https://api.mercadopago.com";
 
-function getBaseUrl(): string {
-  const domains = (process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || "localhost:80").split(",")[0];
-  return `https://${domains}`;
+function makeBookingStatusToken(slug: string, appointmentId: number): string {
+  const secret = process.env.SESSION_SECRET ?? "turnohub-dev-secret";
+  return createHmac("sha256", secret).update(`${slug}:${appointmentId}`).digest("hex");
 }
 
 function addMinutes(time: string, minutes: number): string {
@@ -33,15 +37,20 @@ function timeToMinutes(time: string): number {
 }
 
 /** Calculate how much to charge based on payment mode */
-function calcPaymentAmount(price: number, paymentMode: string, depositPercent: number): number {
-  if (paymentMode === "full") return Math.round(price);
-  if (paymentMode === "deposit") return Math.round(price * depositPercent / 100);
+function calcPaymentAmount(price: number, paymentMode: string, depositPercent: number, depositAmount: number | null): number {
+  if (paymentMode === "full") return Math.round(price * 100) / 100;
+  if (paymentMode === "deposit") {
+    const amount = depositAmount !== null ? depositAmount : price * depositPercent / 100;
+    return Math.round(amount * 100) / 100;
+  }
   return 0;
 }
 
 /** Create a one-time MP payment preference using professional's own token */
 async function createMpPreference(opts: {
+  professionalId: number;
   profToken: string;
+  profRefreshToken: string | null;
   title: string;
   amount: number;
   clientName: string;
@@ -52,7 +61,11 @@ async function createMpPreference(opts: {
   notificationUrl: string;
 }): Promise<{ initPoint: string; id: string } | null> {
   try {
-    const res = await fetch(`${MP_API}/checkout/preferences`, {
+    const res = await professionalMpFetch({
+      id: opts.professionalId,
+      mpAccessToken: opts.profToken,
+      mpRefreshToken: opts.profRefreshToken,
+    }, `${MP_API}/checkout/preferences`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,10 +114,13 @@ router.get("/:slug", async (req, res) => {
   const { slug } = req.params;
 
   const [prof] = await db.select().from(professionalsTable)
-    .where(and(eq(professionalsTable.slug, String(slug)), eq(professionalsTable.status, "active")))
+    .where(eq(professionalsTable.slug, String(slug)))
     .limit(1);
 
-  if (!prof) { res.status(404).json({ error: "Professional not found" }); return; }
+  if (!prof || !["active", "trial"].includes(prof.status) || !await refreshSubscriptionAccess(prof.id)) {
+    res.status(404).json({ error: "Professional not found" });
+    return;
+  }
 
   const services = await db.select().from(servicesTable)
     .where(and(eq(servicesTable.professionalId, prof.id), eq(servicesTable.isActive, true)));
@@ -130,7 +146,61 @@ router.get("/:slug", async (req, res) => {
     // Payment info for booking page
     paymentMode: canAcceptOnlinePayment ? prof.paymentMode : (prof.paymentMode === "in_person" ? "in_person" : "none"),
     depositPercent: prof.depositPercent ?? 30,
+    depositAmount: prof.depositAmount === null ? null : Number(prof.depositAmount),
     services: services.map(s => ({ ...s, price: Number(s.price) })),
+  });
+});
+
+// ── GET /:slug/payment-status/:appointmentId — signed checkout return state ──
+router.get("/:slug/payment-status/:appointmentId", async (req, res) => {
+  const appointmentId = Number(req.params.appointmentId);
+  if (!Number.isSafeInteger(appointmentId) || appointmentId <= 0) {
+    res.status(400).json({ error: "ID de reserva inválido." });
+    return;
+  }
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const expectedToken = makeBookingStatusToken(String(req.params.slug), appointmentId);
+  const supplied = Buffer.from(token, "hex");
+  const expected = Buffer.from(expectedToken, "hex");
+  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+    res.status(403).json({ error: "Token de consulta inválido." });
+    return;
+  }
+
+  const [professional] = await db.select({ id: professionalsTable.id })
+    .from(professionalsTable)
+    .where(and(
+      eq(professionalsTable.slug, String(req.params.slug)),
+      eq(professionalsTable.status, "active"),
+    ))
+    .limit(1);
+  if (!professional) {
+    res.status(404).json({ error: "Reserva no encontrada." });
+    return;
+  }
+
+  const [appointment] = await db.select({
+    status: appointmentsTable.status,
+    paymentStatus: appointmentsTable.paymentStatus,
+    paymentAmount: appointmentsTable.paymentAmount,
+  })
+    .from(appointmentsTable)
+    .where(and(
+      eq(appointmentsTable.id, appointmentId),
+      eq(appointmentsTable.professionalId, professional.id),
+    ))
+    .limit(1);
+  if (!appointment) {
+    res.status(404).json({ error: "Reserva no encontrada." });
+    return;
+  }
+
+  res.json({
+    status: appointment.status,
+    paymentStatus: appointment.paymentStatus,
+    paymentAmount: appointment.paymentStatus === "paid" && appointment.paymentAmount !== null
+      ? Number(appointment.paymentAmount)
+      : null,
   });
 });
 
@@ -145,10 +215,13 @@ router.get("/:slug/slots", async (req, res) => {
   }
 
   const [prof] = await db.select().from(professionalsTable)
-    .where(and(eq(professionalsTable.slug, String(slug)), eq(professionalsTable.status, "active")))
+    .where(eq(professionalsTable.slug, String(slug)))
     .limit(1);
 
-  if (!prof) { res.status(404).json({ error: "Not found" }); return; }
+  if (!prof || !["active", "trial"].includes(prof.status) || !await refreshSubscriptionAccess(prof.id)) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
 
   const [service] = await db.select().from(servicesTable)
     .where(and(eq(servicesTable.id, parseInt(String(serviceId))), eq(servicesTable.professionalId, prof.id)))
@@ -211,10 +284,19 @@ router.post("/:slug/book", async (req, res) => {
   }
 
   const [prof] = await db.select().from(professionalsTable)
-    .where(and(eq(professionalsTable.slug, String(slug)), eq(professionalsTable.status, "active")))
+    .where(eq(professionalsTable.slug, String(slug)))
     .limit(1);
 
-  if (!prof) { res.status(404).json({ error: "Profesional no encontrado" }); return; }
+  if (!prof || !["active", "trial"].includes(prof.status) || !await refreshSubscriptionAccess(prof.id)) {
+    res.status(404).json({ error: "Profesional no encontrado" });
+    return;
+  }
+
+  const appointmentLimit = await checkAppointmentLimit(prof.id);
+  if (!appointmentLimit.ok) {
+    res.status(403).json({ error: appointmentLimit.message, code: "PLAN_LIMIT_REACHED" });
+    return;
+  }
 
   const [service] = await db.select().from(servicesTable)
     .where(and(eq(servicesTable.id, parsed.data.serviceId), eq(servicesTable.professionalId, prof.id)))
@@ -267,6 +349,26 @@ router.post("/:slug/book", async (req, res) => {
   const appointmentStatus = requiresOnlinePayment ? "pending" : "confirmed";
   const paymentStatus = requiresOnlinePayment ? "pending" : null;
   const paymentMode = prof.paymentMode || "none";
+  const baseUrl = getPublicAppUrl();
+
+  if (requiresOnlinePayment && !baseUrl) {
+    res.status(503).json({ error: "Los pagos online no están disponibles porque falta configurar la URL pública HTTPS." });
+    return;
+  }
+
+  const paymentAmount = requiresOnlinePayment
+    ? calcPaymentAmount(
+        servicePrice,
+        prof.paymentMode,
+        prof.depositPercent,
+        prof.depositAmount === null ? null : Number(prof.depositAmount),
+      )
+    : null;
+
+  if (requiresOnlinePayment && (!paymentAmount || paymentAmount <= 0 || paymentAmount > servicePrice)) {
+    res.status(400).json({ error: "El importe de la seña debe ser mayor que cero y no superar el precio del servicio." });
+    return;
+  }
 
   // Create appointment
   const [appointment] = await db.insert(appointmentsTable).values({
@@ -284,9 +386,8 @@ router.post("/:slug/book", async (req, res) => {
     notes: parsed.data.notes ?? null,
     paymentStatus,
     paymentMode,
+    paymentAmount: paymentAmount === null ? null : String(paymentAmount),
   }).returning();
-
-  const baseUrl = getBaseUrl();
 
   // WhatsApp link for professional
   const whatsappPhone = (prof.whatsappNumber || prof.phone || "").replace(/\D/g, "");
@@ -307,21 +408,24 @@ router.post("/:slug/book", async (req, res) => {
     startTime: parsed.data.startTime,
     price: servicePrice,
     paymentMode,
+    paymentAmount: paymentAmount ?? undefined,
   };
 
   let paymentUrl: string | null = null;
 
   if (requiresOnlinePayment) {
     // ── Create MP payment preference ──
-    const paymentAmount = calcPaymentAmount(servicePrice, prof.paymentMode, prof.depositPercent);
-    const successUrl = `${baseUrl}/booking/${slug}?paid=1&apt=${appointment.id}`;
-    const failureUrl = `${baseUrl}/booking/${slug}?error=pago&apt=${appointment.id}`;
+    const statusToken = makeBookingStatusToken(slug, appointment.id);
+    const successUrl = `${baseUrl}/booking/${encodeURIComponent(slug)}?paid=1&apt=${appointment.id}&token=${statusToken}`;
+    const failureUrl = `${baseUrl}/booking/${encodeURIComponent(slug)}?error=pago&apt=${appointment.id}&token=${statusToken}`;
     const notifUrl = `${baseUrl}/api/booking/mp/webhook`;
 
     const preference = await createMpPreference({
+      professionalId: prof.id,
       profToken: prof.mpAccessToken!,
+      profRefreshToken: prof.mpRefreshToken,
       title: `${service.name} — ${prof.name}`,
-      amount: paymentAmount,
+      amount: paymentAmount!,
       clientName: parsed.data.clientName,
       clientEmail: parsed.data.clientEmail,
       externalRef: `apt_${appointment.id}`,
@@ -330,13 +434,18 @@ router.post("/:slug/book", async (req, res) => {
       notificationUrl: notifUrl,
     });
 
-    if (preference) {
-      paymentUrl = preference.initPoint;
-      // Update appointment with payment preference ID
+    if (!preference) {
       await db.update(appointmentsTable)
-        .set({ paymentId: preference.id, updatedAt: new Date() })
+        .set({ status: "cancelled", paymentStatus: "failed", updatedAt: new Date() })
         .where(eq(appointmentsTable.id, appointment.id));
+      res.status(502).json({ error: "Mercado Pago no pudo crear el checkout. No se confirmó la reserva; intentá nuevamente." });
+      return;
     }
+
+    paymentUrl = preference.initPoint;
+    await db.update(appointmentsTable)
+      .set({ paymentId: preference.id, updatedAt: new Date() })
+      .where(eq(appointmentsTable.id, appointment.id));
   }
 
   // Fire-and-forget emails
@@ -351,159 +460,117 @@ router.post("/:slug/book", async (req, res) => {
 // ── POST /mp/webhook — MP payment webhook for bookings ────────────────────────
 // Called by Mercado Pago when a client's booking payment is processed
 router.post("/mp/webhook", async (req, res) => {
-  // Always respond 200 immediately
-  res.json({ ok: true });
-
   try {
     const body = req.body as {
       type?: string;
       user_id?: number | string;
       data?: { id?: string };
     };
-    if (body.type !== "payment" || !body.data?.id) return;
+    if (body.type !== "payment" || !body.data?.id) {
+      res.status(200).json({ ok: true, ignored: true });
+      return;
+    }
+    if (!body.user_id) {
+      res.status(503).json({ error: "Falta el vendedor en la notificación de Mercado Pago." });
+      return;
+    }
 
     const paymentId = body.data.id;
-
-    // Fetch payment details from MP
-    // Note: we need to figure out which professional's token to use.
-    // The external_reference is "apt_{appointmentId}", so we can look up the appointment
-    // first using a system-level token (MP_ACCESS_TOKEN), or we can find the appointment
-    // by payment_id and then use the professional's token.
-    //
-    // Strategy: look up by paymentId in appointments table first, then use prof token.
-    // But on the initial webhook, paymentId isn't stored yet. We need to use a token.
-    //
-    // We'll iterate: try to find the payment using the platform token (MP_ACCESS_TOKEN).
-    // The platform token can read any payment made through MP preferences created
-    // using its child accounts (marketplace flow). If not available, try to find
-    // the appointment by external_reference pattern.
-
-    const platformToken = process.env.MP_ACCESS_TOKEN;
-
-    // Try to fetch payment info using platform token
-    let paymentData: { status?: string; external_reference?: string; transaction_amount?: number } | null = null;
-
-    if (platformToken) {
-      const pmtRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: { Authorization: `Bearer ${platformToken}` },
-      });
-      if (pmtRes.ok) {
-        paymentData = await pmtRes.json() as {
-          status?: string;
-          external_reference?: string;
-          transaction_amount?: number;
-        };
-      }
-    }
-
-    // If platform token didn't work, we'll need to find the appointment via external_reference
-    // from the webhook body (MP sometimes includes it)
-    const extRef = (body as Record<string, unknown>).external_reference as string | undefined;
-    const aptIdMatch = (paymentData?.external_reference || extRef || "").match(/^apt_(\d+)/);
-    if (!aptIdMatch) {
-      console.warn("[MP booking webhook] no external_reference found for payment:", paymentId);
-      return;
-    }
-
-    const appointmentId = parseInt(aptIdMatch[1]);
-
-    // Prefer the seller id sent by Mercado Pago to select the professional's
-    // own OAuth token. This keeps booking charges completely separate from the
-    // platform subscription token.
-    if (!paymentData && body.user_id) {
-      const [seller] = await db.select().from(professionalsTable)
-        .where(eq(professionalsTable.mpUserId, String(body.user_id)))
-        .limit(1);
-      if (seller?.mpAccessToken) {
-        const pmtRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-          headers: { Authorization: `Bearer ${seller.mpAccessToken}` },
-        });
-        if (pmtRes.ok) {
-          paymentData = await pmtRes.json() as {
-            status?: string;
-            external_reference?: string;
-            transaction_amount?: number;
-          };
-        }
-      }
-    }
-
-    // Load appointment + professional
-    const [apt] = await db.select().from(appointmentsTable)
-      .where(eq(appointmentsTable.id, appointmentId))
+    const [seller] = await db.select().from(professionalsTable)
+      .where(eq(professionalsTable.mpUserId, String(body.user_id)))
       .limit(1);
-    if (!apt) {
-      console.warn("[MP booking webhook] appointment not found:", appointmentId);
+    if (!seller?.mpAccessToken) {
+      res.status(503).json({ error: "No se encontró la cuenta Mercado Pago del profesional." });
       return;
     }
 
-    const [prof] = await db.select().from(professionalsTable)
-      .where(eq(professionalsTable.id, apt.professionalId))
+    // Never use TurnoHub's platform access token for a booking payment.
+    const paymentResponse = await professionalMpFetch(seller, `${MP_API}/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${seller.mpAccessToken}` },
+    });
+    if (!paymentResponse.ok) {
+      res.status(502).json({ error: "No se pudo verificar el pago con la cuenta del profesional." });
+      return;
+    }
+    const payment = await paymentResponse.json() as {
+      status?: string;
+      external_reference?: string;
+      transaction_amount?: number;
+      date_approved?: string;
+    };
+    const match = (payment.external_reference || "").match(/^apt_(\d+)$/);
+    if (!match) {
+      res.status(200).json({ ok: true, ignored: true });
+      return;
+    }
+
+    const appointmentId = Number(match[1]);
+    const [appointment] = await db.select().from(appointmentsTable)
+      .where(and(
+        eq(appointmentsTable.id, appointmentId),
+        eq(appointmentsTable.professionalId, seller.id),
+      ))
       .limit(1);
-    if (!prof) return;
-
-    // If we didn't get payment data yet, try with professional's own token
-    if (!paymentData && prof.mpAccessToken) {
-      const pmtRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: { Authorization: `Bearer ${prof.mpAccessToken}` },
-      });
-      if (pmtRes.ok) {
-        paymentData = await pmtRes.json() as {
-          status?: string;
-          external_reference?: string;
-          transaction_amount?: number;
-        };
-      }
+    if (!appointment) {
+      res.status(200).json({ ok: true, ignored: true });
+      return;
     }
-
-    if (!paymentData) {
-      console.warn("[MP booking webhook] could not fetch payment:", paymentId);
+    if (appointment.paymentStatus === "paid" && appointment.paymentId === String(paymentId)) {
+      res.status(200).json({ ok: true, duplicate: true });
       return;
     }
 
-    const paidAmount = paymentData.transaction_amount ?? 0;
+    const paidAmount = Number(payment.transaction_amount);
+    if (payment.status === "approved") {
+      const expectedAmount = Number(appointment.paymentAmount);
+      if (!Number.isFinite(paidAmount) || paidAmount <= 0 ||
+          !Number.isFinite(expectedAmount) || Math.abs(paidAmount - expectedAmount) > 0.01) {
+        console.error("[MP booking webhook] amount mismatch", { appointmentId, paymentId, expectedAmount, paidAmount });
+        res.status(422).json({ error: "El importe verificado no coincide con el importe de la reserva." });
+        return;
+      }
 
-    if (paymentData.status === "approved") {
-      // ── Payment approved: confirm appointment and record payment ──
       await db.update(appointmentsTable)
         .set({
           status: "confirmed",
           paymentStatus: "paid",
           paymentId: String(paymentId),
           paymentAmount: String(paidAmount),
-          paymentDate: new Date(),
+          paymentDate: payment.date_approved ? new Date(payment.date_approved) : new Date(),
           updatedAt: new Date(),
         })
         .where(eq(appointmentsTable.id, appointmentId));
 
-      // Send payment confirmation emails
       const emailData = {
-        clientName: apt.clientName,
-        clientEmail: apt.clientEmail,
-        profName: prof.name,
-        profEmail: prof.email,
-        profPhone: prof.phone,
-        serviceName: apt.serviceName,
-        date: apt.date,
-        startTime: apt.startTime,
+        clientName: appointment.clientName,
+        clientEmail: appointment.clientEmail,
+        profName: seller.name,
+        profEmail: seller.email,
+        profPhone: seller.phone,
+        serviceName: appointment.serviceName,
+        date: appointment.date,
+        startTime: appointment.startTime,
         price: paidAmount,
+        paymentMode: appointment.paymentMode ?? undefined,
+        paymentAmount: paidAmount,
         paidAmount,
       };
-
-      const { subject: cs, html: ch } = emailPaymentReceivedClient(emailData);
-      const { subject: ps, html: ph } = emailPaymentReceivedProf(emailData);
-      sendEmail(apt.clientEmail, cs, ch);
-      sendEmail(prof.email, ps, ph);
-
-    } else if (paymentData.status === "rejected" || paymentData.status === "cancelled") {
-      // Payment failed — keep appointment as pending (professional can decide)
+      const { subject: clientSubject, html: clientHtml } = emailPaymentReceivedClient(emailData);
+      const { subject: professionalSubject, html: professionalHtml } = emailPaymentReceivedProf(emailData);
+      await Promise.all([
+        sendEmail(appointment.clientEmail, clientSubject, clientHtml),
+        sendEmail(seller.email, professionalSubject, professionalHtml),
+      ]);
+    } else if (payment.status === "rejected" || payment.status === "cancelled") {
       await db.update(appointmentsTable)
-        .set({ paymentStatus: "failed", updatedAt: new Date() })
+        .set({ status: "cancelled", paymentStatus: "failed", updatedAt: new Date() })
         .where(eq(appointmentsTable.id, appointmentId));
     }
 
+    res.status(200).json({ ok: true });
   } catch (err) {
     console.error("[MP booking webhook] error:", err);
+    res.status(500).json({ error: "No se pudo procesar el pago." });
   }
 });
 

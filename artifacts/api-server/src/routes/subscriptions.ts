@@ -3,8 +3,9 @@ import { db } from "@workspace/db";
 import { subscriptionsTable, professionalsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { CreateSubscriptionBody } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 import { sendEmail, emailSubscriptionActivated } from "../lib/email";
+import { getPublicAppUrl } from "../lib/app-url";
 
 const router = Router();
 
@@ -64,11 +65,6 @@ function getMpToken(): string | null {
   return process.env.MP_ACCESS_TOKEN || null;
 }
 
-function getBaseUrl(): string {
-  const domains = (process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || "localhost:80").split(",")[0];
-  return `https://${domains}`;
-}
-
 async function getProfessionalForUser(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   if (!user) return { user: null, prof: null };
@@ -84,9 +80,10 @@ async function checkAndExpireTrial(professionalId: number) {
   if (!sub) return;
 
   const now = new Date();
-  if (sub.status === "trial" && sub.currentPeriodEnd < now) {
+  if ((sub.status === "trial" || sub.status === "active") && sub.currentPeriodEnd <= now) {
+    const expiredStatus = sub.cancelAtPeriodEnd ? "cancelled" : "past_due";
     await db.update(subscriptionsTable)
-      .set({ status: "past_due", updatedAt: new Date() })
+      .set({ status: expiredStatus, updatedAt: new Date() })
       .where(eq(subscriptionsTable.id, sub.id));
     await db.update(professionalsTable)
       .set({ status: "suspended", updatedAt: new Date() })
@@ -115,7 +112,7 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 // POST /me — direct activation (admin/internal use)
-router.post("/me", requireAuth, async (req, res) => {
+router.post("/me", requireAuth, requireRole("admin"), async (req, res) => {
   const parsed = CreateSubscriptionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -168,12 +165,34 @@ router.post("/me/cancel", requireAuth, async (req, res) => {
 
   if (!existing) { res.status(404).json({ error: "No subscription found" }); return; }
 
-  const [updated] = await db.update(subscriptionsTable)
+  const token = getMpToken();
+  if (existing.mpPreapprovalId && !token) {
+    res.status(503).json({ error: "Mercado Pago no está configurado." });
+    return;
+  }
+
+  const [pendingCancellation] = await db.update(subscriptionsTable)
     .set({ cancelAtPeriodEnd: true, updatedAt: new Date() })
     .where(eq(subscriptionsTable.id, existing.id))
     .returning();
 
-  res.json(updated);
+  if (existing.mpPreapprovalId && token) {
+    const mpRes = await fetch(`${MP_API}/preapproval/${encodeURIComponent(existing.mpPreapprovalId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status: "cancelled" }),
+    });
+    if (!mpRes.ok) {
+      console.error("[MP subscription cancel] cancellation failed:", mpRes.status, await mpRes.text());
+      await db.update(subscriptionsTable)
+        .set({ cancelAtPeriodEnd: false, updatedAt: new Date() })
+        .where(eq(subscriptionsTable.id, existing.id));
+      res.status(502).json({ error: "Mercado Pago no pudo cancelar la renovación. No se modificó la suscripción." });
+      return;
+    }
+  }
+
+  res.json(pendingCancellation);
 });
 
 // ─── Mercado Pago Checkout ────────────────────────────────────────────────────
@@ -193,7 +212,11 @@ router.post("/mp/checkout", requireAuth, async (req, res) => {
   const { user, prof } = await getProfessionalForUser(req.session.userId!);
   if (!prof || !user) { res.status(404).json({ error: "Not found" }); return; }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getPublicAppUrl();
+  if (!baseUrl) {
+    res.status(503).json({ error: "La URL pública HTTPS de TurnoHub no está configurada." });
+    return;
+  }
 
   // ── Step 1: Ensure a subscription row exists (so webhook can find it by mpPreapprovalId) ──
   let sub;
@@ -202,9 +225,24 @@ router.post("/mp/checkout", requireAuth, async (req, res) => {
     .limit(1);
 
   if (existing) {
-    // Update plan slug (payment pending)
+    if (existing.mpPreapprovalId && existing.status === "active") {
+      res.status(409).json({ error: "Ya hay una suscripción activa. Cancelala antes de iniciar otra para evitar cobros duplicados." });
+      return;
+    }
+    if (existing.mpPreapprovalId) {
+      const cancelPending = await fetch(`${MP_API}/preapproval/${encodeURIComponent(existing.mpPreapprovalId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      if (!cancelPending.ok) {
+        console.error("[MP checkout] could not replace pending preapproval:", cancelPending.status, await cancelPending.text());
+        res.status(502).json({ error: "No se pudo cancelar el checkout anterior. No se creó otra suscripción." });
+        return;
+      }
+    }
     [sub] = await db.update(subscriptionsTable)
-      .set({ planSlug: plan.slug, updatedAt: new Date() })
+      .set({ planSlug: plan.slug, status: "trial", mpPreapprovalId: null, updatedAt: new Date() })
       .where(eq(subscriptionsTable.id, existing.id))
       .returning();
   } else {
@@ -271,11 +309,11 @@ router.post("/mp/checkout", requireAuth, async (req, res) => {
 
 /** POST /mp/webhook — called by Mercado Pago (no auth required) */
 router.post("/mp/webhook", async (req, res) => {
-  // Always respond 200 immediately so MP doesn't retry
-  res.json({ ok: true });
-
   const token = getMpToken();
-  if (!token) return;
+  if (!token) {
+    res.status(503).json({ error: "Mercado Pago no está configurado." });
+    return;
+  }
 
   try {
     const body = req.body as { type?: string; data?: { id?: string } };
@@ -291,8 +329,10 @@ router.post("/mp/webhook", async (req, res) => {
       await handlePaymentEvent(data.id, token);
     }
 
+    res.status(200).json({ ok: true });
   } catch (err) {
     console.error("[MP webhook] error:", err);
+    res.status(500).json({ error: "No se pudo procesar la notificación." });
   }
 });
 
@@ -301,7 +341,7 @@ async function handlePreapprovalEvent(preapprovalId: string, token: string) {
   const mpRes = await fetch(`${MP_API}/preapproval/${preapprovalId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!mpRes.ok) return;
+  if (!mpRes.ok) throw new Error(`Mercado Pago preapproval lookup failed: ${mpRes.status}`);
 
   const preapproval = await mpRes.json() as {
     id: string;
@@ -367,6 +407,13 @@ async function handlePreapprovalEvent(preapprovalId: string, token: string) {
     }
 
   } else if (preapproval.status === "cancelled" || preapproval.status === "paused") {
+    if (preapproval.status === "cancelled" && sub.cancelAtPeriodEnd && sub.currentPeriodEnd > now) {
+      await db.update(subscriptionsTable)
+        .set({ cancelAtPeriodEnd: true, updatedAt: new Date() })
+        .where(eq(subscriptionsTable.id, sub.id));
+      return;
+    }
+
     // ── Suspend subscription ──
     await db.update(subscriptionsTable)
       .set({ status: "past_due", cancelAtPeriodEnd: true, updatedAt: new Date() })
@@ -382,7 +429,7 @@ async function handlePaymentEvent(paymentId: string, token: string) {
   const pmtRes = await fetch(`${MP_API}/v1/payments/${paymentId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!pmtRes.ok) return;
+  if (!pmtRes.ok) throw new Error(`Mercado Pago payment lookup failed: ${pmtRes.status}`);
 
   const pmt = await pmtRes.json() as {
     status: string;

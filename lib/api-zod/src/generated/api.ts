@@ -81,6 +81,7 @@ export const GetMyProfessionalProfileResponse = zod.object({
   "trialEndsAt": zod.string().nullish(),
   "paymentMode": zod.string().optional(),
   "depositPercent": zod.number().optional(),
+  "depositAmount": zod.number().nullish(),
   "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -101,7 +102,8 @@ export const UpdateMyProfessionalProfileBody = zod.object({
   "facebookUrl": zod.string().optional(),
   "websiteUrl": zod.string().optional(),
   "paymentMode": zod.string().optional(),
-  "depositPercent": zod.number().optional()
+  "depositPercent": zod.number().optional(),
+  "depositAmount": zod.number().nullish()
 })
 
 export const UpdateMyProfessionalProfileResponse = zod.object({
@@ -125,6 +127,7 @@ export const UpdateMyProfessionalProfileResponse = zod.object({
   "trialEndsAt": zod.string().nullish(),
   "paymentMode": zod.string().optional(),
   "depositPercent": zod.number().optional(),
+  "depositAmount": zod.number().nullish(),
   "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -172,6 +175,7 @@ export const GetProfessionalResponse = zod.object({
   "trialEndsAt": zod.string().nullish(),
   "paymentMode": zod.string().optional(),
   "depositPercent": zod.number().optional(),
+  "depositAmount": zod.number().nullish(),
   "mpUserId": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -612,6 +616,7 @@ export const GetPublicProfileResponse = zod.object({
   "websiteUrl": zod.string().nullish(),
   "paymentMode": zod.string(),
   "depositPercent": zod.number(),
+  "depositAmount": zod.number().nullish(),
   "services": zod.array(zod.object({
   "id": zod.number(),
   "professionalId": zod.number(),
@@ -645,6 +650,25 @@ export const GetAvailableSlotsResponseItem = zod.object({
   "available": zod.boolean()
 })
 export const GetAvailableSlotsResponse = zod.array(GetAvailableSlotsResponseItem)
+
+
+/**
+ * @summary Get the payment status for a public booking
+ */
+export const GetBookingPaymentStatusParams = zod.object({
+  "slug": zod.coerce.string(),
+  "appointmentId": zod.coerce.number()
+})
+
+export const GetBookingPaymentStatusQueryParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetBookingPaymentStatusResponse = zod.object({
+  "status": zod.string(),
+  "paymentStatus": zod.string().nullable(),
+  "paymentAmount": zod.number().nullish()
+})
 
 
 /**
